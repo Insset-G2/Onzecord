@@ -1,0 +1,13 @@
+# Ignore Next.js build output
+.next/
+out/
+
+# Ignore environment variable files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Ignore Node.js modules
+node_modules/
