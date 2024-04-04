@@ -49,7 +49,14 @@ export default function Page() {
                         <CardDescription>Hello there, Join over 0 users today!</CardDescription>
                     </CardHeader>
                     <CardContent>
-                       <SignIn action={ onSubmit } />
+                        <SignIn action={ async ( values: { email: string, password: string } ) => {
+                            "use server"
+                            try {
+                                await signIn( "credentials", values )
+                            } catch ( error ) {
+                                console.error( error )
+                            }
+                        } } />
                     </CardContent>
                 </Card>
             </MotionDiv>
