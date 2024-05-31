@@ -10,7 +10,7 @@ export default function Page() {
   return (
 
     <main>
-        <div className="h-screen w-full dark:bg-neutral-800 dark:bg-grid-white/[0.1] bg-grid-black/[0.2] relative flex items-center justify-center">
+        <div className="h-screen w-full dark:bg-neutral-800 dark:bg-grid-white/[0.1] bg-grid-black/[0.2] relative flex items-center justify-center overflow-hidden">
 
             <div className="absolute left-0 top-0 z-10 h-full w-full bg-[radial-gradient(circle,rgba(2,0,36,0)0,rgb(16,17,16,100%))]" />
             <div className="absolute pointer-events-none inset-0 flex items-center justify-center dark:bg-black bg-white [mask-image:radial-gradient(ellipse_at_bottom,transparent_0%,black)]"/>

@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client"
 
 import createGlobe from "cobe";
@@ -5,7 +6,7 @@ import { useEffect, useRef } from "react";
 import { useSpring } from "react-spring";
 
 export default function Cobe() {
-    const canvasRef = useRef();
+    const canvasRef = useRef( null );
     const pointerInteracting = useRef(null);
     const pointerInteractionMovement = useRef(0);
     const [{ r }, api] = useSpring(() => ({
@@ -18,9 +19,10 @@ export default function Cobe() {
         },
     }));
     useEffect(() => {
+
         let width = 0;
         let phi = 0;
-        const onResize = () => canvasRef.current && (width = canvasRef.current.offsetWidth)
+        const onResize = () => canvasRef.current && (width = canvasRef.current.offsetWidth);
         window.addEventListener('resize', onResize)
         onResize()
         const globe = createGlobe(canvasRef.current, {
@@ -33,7 +35,7 @@ export default function Cobe() {
             diffuse: 3,
             mapBrightness: 4.6,
             mapSamples: 16000,
-            backgroundColor:{"r":255,"g":0,"b":0,"a":1},
+
             baseColor: [0.5, 0.5, 0.5],
             markerColor: [251 / 255, 100 / 255, 21 / 255],
 

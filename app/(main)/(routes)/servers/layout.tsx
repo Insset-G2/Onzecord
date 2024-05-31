@@ -1,13 +1,7 @@
-import ServerNavbar from "@/components/ServerNavbar";
-
-// Get server data from the server, 
-
 export default function ServersLayout({ children }: Readonly<{ children: React.ReactNode }>) {
 
-
     return (
-        <div className="w-screen h-screen bg-neutral-950 text-white">
-            <ServerNavbar servers={[]} />
+        <div className="bg-neutral-950/20 text-white h-[calc(100vh-4rem)] flex">
             { children }
         </div>
     )
