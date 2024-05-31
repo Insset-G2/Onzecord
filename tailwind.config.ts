@@ -3,7 +3,17 @@ import type { Config } from "tailwindcss"
 import svgToDataUri from "mini-svg-data-uri";
 
 import colors from "tailwindcss/colors";
-import {default as flattenColorPalette} from "tailwindcss/lib/util/flattenColorPalette";
+
+function flattenColorPalette(colors: any): object {
+  return Object.assign(
+    {},
+    ...Object.entries(colors).map(([color, values]) =>
+      typeof values === "string"
+        ? { [color]: values }
+        : flattenColorPalette(values)
+    )
+  );
+}
 
 const config = {
   darkMode: ["class"],

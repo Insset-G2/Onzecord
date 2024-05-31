@@ -42,7 +42,7 @@ export function Combobox({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant={variant}
+          variant={variant === "outline" ? "outline" : "default"}
           role="combobox"
           aria-expanded={open}
           className="w-[200px] justify-between hover:bg-neutral-950/40"

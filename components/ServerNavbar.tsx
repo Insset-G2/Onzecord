@@ -1,127 +1,168 @@
 "use client"
 
-import * as React from "react"
-import Link from "next/link"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-import { cn } from "@/lib/utils"
 import {
-    NavigationMenu,
-    NavigationMenuContent,
-    NavigationMenuItem,
-    NavigationMenuLink,
-    NavigationMenuList,
-    NavigationMenuTrigger,
-    navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu"
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+  } from "@/components/ui/dropdown-menu"
 
-import { Combobox } from "./ui/combobox"
-import { Input } from "./ui/input"
+import {
+AlertDialog,
+AlertDialogAction,
+AlertDialogCancel,
+AlertDialogContent,
+AlertDialogDescription,
+AlertDialogFooter,
+AlertDialogHeader,
+AlertDialogTitle,
+AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator
+  } from "@/components/ui/breadcrumb"
+
+import { SlashIcon , ChevronDownIcon, DiscIcon } from "@radix-ui/react-icons"
+
+import useContextProvider from "@/hooks/useContextProvider"
+import Link from "next/link"
 import { Button } from "./ui/button"
+import { PlusIcon } from "lucide-react"
 
+export default function Navbar( ) {
 
-const components: { title: string; href: string; description: string }[] = [
-    {
-        title: "Alert Dialog",
-        href: "/docs/primitives/alert-dialog",
-        description:
-            "A modal dialog that interrupts the user with important content and expects a response.",
-    },
-    {
-        title: "Hover Card",
-        href: "/docs/primitives/hover-card",
-        description:
-            "For sighted users to preview content available behind a link.",
-    },
-    {
-        title: "Progress",
-        href: "/docs/primitives/progress",
-        description:
-            "Displays an indicator showing the completion progress of a task, typically displayed as a progress bar.",
-    },
-    {
-        title: "Scroll-area",
-        href: "/docs/primitives/scroll-area",
-        description: "Visually or semantically separates content.",
-    },
-    {
-        title: "Tabs",
-        href: "/docs/primitives/tabs",
-        description:
-            "A set of layered sections of content—known as tab panels—that are displayed one at a time.",
-    },
-    {
-        title: "Tooltip",
-        href: "/docs/primitives/tooltip",
-        description:
-            "A popup that displays information related to an element when the element receives keyboard focus or the mouse hovers over it.",
-    },
-]
-
-
-export default function Navbar({
-    servers,
-    channels,
-}: {
-    servers: { id: string; name: string }[]
-    channels: { id: string; name: string }[]
-} ) {
-
+    const { 
+        setContextValue,
+        contextValue
+    } = useContextProvider( );
+    
     return (
-
         <div className="w-full border-b border-neutral-600/40 bg-neutral-900/95 backdrop-blur supports-[backdrop-filter]:bg-neutral-900/30">
-            <div
-                className="mx-10 flex h-16 max-w-screen-2xl items-center"
-                style={{ justifyContent: "space-between" }}
-            >
-                <div className="flex items-center space-x-4">
-                    <Combobox
-                        variant="outline"
-                        options={components.map((component) => ({ value: component.href, label: component.title }))}
-                        value={""}
-                        setValue={(value) => console.log(value)}
-                        placeholder="Select a server"
-                        emptyMessage="No components found"
-                        searchMessage="Search components"
-                    />
-                    <div className="border-l border-[1px] border-neutral-500/40 h-6 rounded rotate-[30deg]" />
-                    <span>
-                        Components
-                    </span>
-                    
-                </div>
-                <div className="flex w-full max-w-sm items-center space-x-2">
-                    <Input type="text" placeholder="Type to search" />
-                    <Button type="submit">O</Button>
-                </div>
+            <div className="mx-10 flex h-16 items-center justify-between">
+                <Breadcrumb>
+                    <BreadcrumbList>
+                        <BreadcrumbItem>
+                            <DiscIcon />
+                        </BreadcrumbItem>
+                        <BreadcrumbSeparator>
+                            <SlashIcon />
+                        </BreadcrumbSeparator>
+                        <BreadcrumbItem>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger className="flex items-center gap-1">
+                                    
+                                    <Avatar className="h-7 w-7 mr-2">
+                                        <AvatarImage src="" />
+                                        <AvatarFallback>CN</AvatarFallback>
+                                    </Avatar>
+
+                                    { contextValue.selectedServer ? (
+                                        contextValue.servers.find( ( server: any ) => server.id == contextValue.selectedServer )?.name
+                                    ) : (
+                                        "Select a server"
+                                    )}
+                                    <ChevronDownIcon />
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start">
+                                    { contextValue.servers ? (
+                                        contextValue.servers.map( ( server: any ) => (
+                                            <DropdownMenuItem key={ server.id }>
+                                                <BreadcrumbLink asChild>
+                                                    <Link 
+                                                        className="size-full"
+                                                        href={ `/servers/${ server.id }` }
+                                                    >
+                                                        { server.name }
+                                                    </Link>
+                                                </BreadcrumbLink>
+                                            </DropdownMenuItem>
+                                        ))
+                                    ) : (
+                                        <DropdownMenuItem>Documentation</DropdownMenuItem>
+                                    )}  
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </BreadcrumbItem>
+                        { contextValue.selectedServer ? (
+                            <>
+                                <BreadcrumbSeparator>
+                                    <SlashIcon />
+                                </BreadcrumbSeparator>
+                                <BreadcrumbItem>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger className="flex items-center gap-1">
+                                            <Avatar className="h-7 w-7 mr-2">
+                                                <AvatarImage src="" />
+                                                <AvatarFallback>CN</AvatarFallback>
+                                            </Avatar>
+                                            { contextValue.selectedServer && contextValue?.servers.length > 0 && contextValue.selectedChannel ? (
+                                                contextValue.servers.find( ( server: any ) => server.id == contextValue.selectedServer )
+                                                    .channels.find( ( channel: any ) => channel.id == contextValue.selectedChannel )?.name
+                                            ) : (
+                                                "Select a channel"
+                                            )}
+                                            <ChevronDownIcon />
+                                        <ChevronDownIcon />
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="start">
+                                            { 
+                                                contextValue.selectedServer && contextValue?.servers.length > 0 &&
+                                                
+                                                contextValue?.servers.find( ( server: any ) => server.id == contextValue.selectedServer )
+                                                    .channels.map( ( channel: any ) => (
+                                                        <DropdownMenuItem key={ channel.id }>
+                                                            <BreadcrumbLink asChild>
+                                                                <Link 
+                                                                    className="size-full"
+                                                                    href={ `/servers/${ contextValue.selectedServer }/channels/${ channel.id }` }
+                                                                >
+                                                                    { channel.name }
+                                                                </Link>
+                                                            </BreadcrumbLink>
+                                                        </DropdownMenuItem>
+                                                    ))
+                                            }
+                                            
+                                                
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </BreadcrumbItem>
+                            </>
+                        ) : null }
+                    </BreadcrumbList>
+                </Breadcrumb>
+
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant={ "outline" } className="bg-neutral-900/50">
+                            <PlusIcon className="mr-2 h-4 w-4" />
+                            Create server
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete your account
+                            and remove your data from our servers.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction>Continue</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </div>
-
     )
 
 }
-
-const ListItem = React.forwardRef<
-    React.ElementRef<"a">,
-    React.ComponentPropsWithoutRef<"a">
->(({ className, title, children, ...props }, ref) => {
-    return (
-        <li>
-            <NavigationMenuLink asChild>
-                <a
-                    ref={ref}
-                    className={cn(
-                        "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-                        className
-                    )}
-                    {...props}
-                >
-                    <div className="text-sm font-medium leading-none">{title}</div>
-                    <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                        {children}
-                    </p>
-                </a>
-            </NavigationMenuLink>
-        </li>
-    )
-})
-ListItem.displayName = "ListItem"
