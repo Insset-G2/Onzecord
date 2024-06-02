@@ -36,14 +36,19 @@ import useContextProvider from "@/hooks/useContextProvider"
 import Link from "next/link"
 import { Button } from "./ui/button"
 import { PlusIcon } from "lucide-react"
+import { useEffect } from "react"
 
 export default function Navbar( ) {
 
-    const { 
+    const {
         setContextValue,
         contextValue
     } = useContextProvider( );
-    
+
+    useEffect( ( ) => {
+        console.log( contextValue );
+    }, [ contextValue ] )
+
     return (
         <div className="w-full border-b border-neutral-600/40 bg-neutral-900/95 backdrop-blur supports-[backdrop-filter]:bg-neutral-900/30">
             <div className="mx-10 flex h-16 items-center justify-between">
@@ -58,7 +63,7 @@ export default function Navbar( ) {
                         <BreadcrumbItem>
                             <DropdownMenu>
                                 <DropdownMenuTrigger className="flex items-center gap-1">
-                                    
+
                                     <Avatar className="h-7 w-7 mr-2">
                                         <AvatarImage src="" />
                                         <AvatarFallback>CN</AvatarFallback>
@@ -76,7 +81,7 @@ export default function Navbar( ) {
                                         contextValue.servers.map( ( server: any ) => (
                                             <DropdownMenuItem key={ server.id }>
                                                 <BreadcrumbLink asChild>
-                                                    <Link 
+                                                    <Link
                                                         className="size-full"
                                                         href={ `/servers/${ server.id }` }
                                                     >
@@ -87,7 +92,7 @@ export default function Navbar( ) {
                                         ))
                                     ) : (
                                         <DropdownMenuItem>Documentation</DropdownMenuItem>
-                                    )}  
+                                    )}
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </BreadcrumbItem>
@@ -113,14 +118,14 @@ export default function Navbar( ) {
                                         <ChevronDownIcon />
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="start">
-                                            { 
+                                            {
                                                 contextValue.selectedServer && contextValue?.servers.length > 0 &&
-                                                
+
                                                 contextValue?.servers.find( ( server: any ) => server.id == contextValue.selectedServer )
                                                     .channels.map( ( channel: any ) => (
                                                         <DropdownMenuItem key={ channel.id }>
                                                             <BreadcrumbLink asChild>
-                                                                <Link 
+                                                                <Link
                                                                     className="size-full"
                                                                     href={ `/servers/${ contextValue.selectedServer }/channels/${ channel.id }` }
                                                                 >
@@ -130,8 +135,8 @@ export default function Navbar( ) {
                                                         </DropdownMenuItem>
                                                     ))
                                             }
-                                            
-                                                
+
+
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </BreadcrumbItem>
