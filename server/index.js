@@ -5,7 +5,7 @@ const LoremIpsum = require("lorem-ipsum").LoremIpsum;
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
-const port = 3000;
+const port = 8080;
 
 const app = next({ dev, hostname, port });
 const handler = app.getRequestHandler();
