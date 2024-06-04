@@ -4,7 +4,7 @@ import { createContext, useState, useMemo, useEffect } from "react";
 import { useWebsocket } from "@/hooks/useWebsocket";
 export const Context = createContext({
     socket: null as any,
-    contextValue: { 
+    contextValue: {
         servers: [ ],
         users: [ ],
         selectedServer: null,
@@ -12,14 +12,23 @@ export const Context = createContext({
     },
     setContextValue: ( value: any ) => { },
     messages: [ ] as Message[ ],
+    user: {
+        username: "",
+        description: "",
+        image: "",
+    },
     users: [ ] as {
         username: string;
         description: string;
         id: string;
         image: string;
     }[ ],
-    sendMessage: ( channel: string, message: string, author: string ) => { },
-    getMessages: ( server: string, channel: string ) => { }
+    joinChannel: ( server: string, channel: string ) => { },
+    sendMessage: ( serverID: string, channelID: string, message: string, author: {
+        username: string;
+        image: string;
+    } ) => { },
+    getMessages: ( serverID: string, channelID: string ) => { }
 });
 
 
@@ -35,7 +44,7 @@ export interface Message {
 }
 
 export const ContextProvider = ({ children }: { children: React.ReactNode }) => {
-    
+
     const [ messages, setMessages ] = useState<Message[ ]>( [ ] );
     const [ contextValue, setContextValue ] = useState( {
         servers: [ ],
@@ -60,15 +69,23 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
     })
 
     function sendMessage(
-        channel: string,
+        serverID: string,
+        channelID: string,
         message: string,
-        author: string
+        author: {
+            username: string;
+            image: string;
+        }
     ) {
-        socket?.emit( "sendMessage", { channel, message, author } );
+        socket?.emit( "sendMessage", { serverID, channelID, message, author } );
     }
 
-    function getMessages( server: string, channel: string ) {
-        socket?.emit( "getMessages", { server, channel } );
+    function getMessages( serverID: string, channelID: string ) {
+        socket?.emit( "getMessages", { serverID, channelID } );
+    }
+
+    function joinChannel( serverID: string, channelID: string ) {
+        socket?.emit( "joinChannel", { serverID, channelID } );
     }
 
     function getServers( server: string ) {
@@ -79,18 +96,24 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
         setMessages( value.messages );
     })
 
-    socket?.on( "newMessage", ( value: { message: Message } ) => {
+    socket?.on("newMessage", (value: { reply: Message } ) => {
+        console.log( "Got new message:", value )
         setMessages([
             ...messages,
-            value.message
+            value.reply
         ])
     })
-    
+
     return (
         <Context.Provider value={{
             contextValue,
             setContextValue,
             messages,
+            user: {
+                username: Math.random().toString(36).substring(7),
+                description: "",
+                image: "https://bla.com",
+            },
             users: [{
                 username: "Jérémy",
                 description: "Hello, this is a description",
@@ -99,6 +122,7 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
             }],
             sendMessage,
             getMessages,
+            joinChannel,
             socket
         }}>
             { children }

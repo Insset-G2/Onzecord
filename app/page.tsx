@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { ChevronRightIcon } from "@radix-ui/react-icons"
 import Cobe from "@/components/Cobe"
 import Spotlight from "@/components/Spotlight"
+import Link from "next/link";
 
 export default function Page() {
   return (
@@ -30,12 +31,16 @@ export default function Page() {
                 </div>
 
               <div className={`flex items-center justify-center gap-4 relative z-20 mt-5`}>
-                  <Button className="px-8 py-5 rounded-sm hover:ring-2 hover:ring-offset-2 hover:ring-offset-neutral-900 hover:ring-white transition-all duration-300">
+                  <Button disabled className="px-8 py-5 rounded-sm hover:ring-2 hover:ring-offset-2 hover:ring-offset-neutral-900 hover:ring-white transition-all duration-300">
                       Login
                   </Button>
-                  <Button variant="secondary" disabled className="px-8 py-5 rounded-sm hover:ring-2 hover:ring-offset-2 hover:ring-offset-neutral-900 hover:ring-neutral-500 transition-all duration-300">
+                  <Button asChild variant="secondary" className="px-8 py-5 rounded-sm hover:ring-2 hover:ring-offset-2 hover:ring-offset-neutral-900 hover:ring-neutral-500 transition-all duration-300">
+
+                    <Link href="/servers">
                         Open the app
-                      <ChevronRightIcon className="ml-2 h-5 w-5" />
+                        <ChevronRightIcon className="ml-2 h-5 w-5" />
+                    </Link>
+
                   </Button>
 
               </div>

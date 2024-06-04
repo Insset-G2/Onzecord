@@ -6,16 +6,19 @@ const LoremIpsum = require("lorem-ipsum").LoremIpsum;
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
 const port = 3000;
-// when using middleware `hostname` and `port` must be provided below
+
 const app = next({ dev, hostname, port });
 const handler = app.getRequestHandler();
 
+/* At this moment, we don't have data persistence, so we will store the messages in memory,
+   yes, i"m aware that this is not a good idea... */
 
-const users = { }
+const messages  = { }
+    , users     = { }
 
 app.prepare().then(() => {
 
-  const httpServer = createServer(handler);
+  const httpServer = createServer( handler );
 
   const io = new Server(httpServer);
 
@@ -55,53 +58,26 @@ app.prepare().then(() => {
       }],
     }] });
 
-    
+
   }
 
-  io.of( "/" ).adapter.on("join-room", (room, id) => {
-    console.log(`socket ${id} has joined room ${room}`);
-  });
-
-  io.of( "/" ).adapter.on("leave-room", (room, id) => {
-    console.log(`socket ${id} has left room ${room}`);
-  });
-
-
-  
-  
-
   io.on( "connection", ( socket ) => {
-
-  //  Get all rooms, and the users in each room
-    const rooms = io.sockets.adapter.rooms;
-    console.log( rooms )
-    for ( const room in rooms ) {
-      const usersInRoom = io.sockets.adapter.rooms.get( room );
-      console.log( "Room: ", room, "Users: ", usersInRoom );
-    }
-
-
-    users[ socket.id ] = {
-      socket,
-    }
 
     socket.on("getServers", () => {
       sendServer( socket );
     });
 
-    socket.on( "getMessages", ( { serverId, channelId } ) => {
+    socket.on( "joinChannel", ({ serverID, channelID }) => {
+        console.log( `Socket ${socket.id} joined ${serverID}/${channelID}` );
+        socket.join( `${serverID}/${channelID}` );
+    });
 
-      users[ socket.id ].serverId = serverId;
-      users[ socket.id ].channelId = channelId;
-
-      if ( users[ socket.id ].room )
-        socket.leave( users[ socket.id ].room );
-      socket.join( `${ serverId }/${ channelId }`);
+    socket.on( "getMessages", ( { serverID, channelID } ) => {
 
       const sentences = Math.floor(Math.random() * 30) + 10;
       const texts = Array.from({ length: sentences }, () => lorem.generateWords( sentences ));
-      const messages = texts.map( ( content, index ) => ({ 
-        id: index, 
+      const messages = texts.map( ( content, index ) => ({
+        id: index,
         content,
         author: {
           id: [1, 2, 3][Math.floor(Math.random() * 3) ],
@@ -112,14 +88,15 @@ app.prepare().then(() => {
 
       }) );
 
-      socket.emit( "getMessages", { serverId, channelId, messages });
+      socket.emit( "getMessages", { serverID, channelID, messages });
 
     });
 
-    socket.on( "sendMessage", ( { serverId, channelId, content } ) => {
-      const message = {
+    socket.on( "sendMessage", ({ serverID, channelID, message, author }) => {
+
+      const reply = {
         id: Math.floor(Math.random() * 1000),
-        content,
+        message,
         author: {
           id: [1, 2, 3][Math.floor(Math.random() * 3) ],
           username: "User [" + Math.random().toString(36).substring(7) + "]",
@@ -127,7 +104,9 @@ app.prepare().then(() => {
         },
         timestamp: Date.now(),
       };
-      io.to( `${serverId}/${channelId}` ).emit("newMessage", { serverId, channelId, message });
+       console.log( reply )
+      console.log( `Send message to ${serverID}/${channelID}` );
+      io.to( `${serverID}/${channelID}` ).emit( "newMessage", { serverID, channelID, reply });
     })
 
     socket.on("disconnect", () => {

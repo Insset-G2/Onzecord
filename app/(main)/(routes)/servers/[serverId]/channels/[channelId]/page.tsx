@@ -1,27 +1,30 @@
 "use client"
 
-import { redirect } from "next/navigation"
-import { ChatHeader } from "@/components/ChatHeader"
 import useContextProvider from "@/hooks/useContextProvider"
 import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { SendIcon } from "lucide-react"
 import { Message as _Message } from "@/components/ContextProvider"
+import Image from "next/image"
 
 export default function Page({
     params: { serverID, channelID }
 }: Readonly<{ params: { serverID: string, channelID: string } }>) {
 
-    const { contextValue, setContextValue, 
+    const { contextValue,
+        setContextValue,
         sendMessage,
+        user,
         messages,
         getMessages,
+        joinChannel,
         socket
     } = useContextProvider( );
 
     useEffect(() => {
         if( socket?.connected )
+            joinChannel( serverID, channelID )
             getMessages( serverID, channelID )
     }, [ socket?.connected ])
 
@@ -34,6 +37,10 @@ export default function Page({
         }))
     }, [ serverID, channelID, setContextValue ])
 
+    useEffect(() => {
+        console.log( messages )
+    }, [ messages ])
+
     return (
         <>
             <div className="flex-1 overflow-y-auto p-12 space-y-5 max-h-[-webkit-fill-available]">
@@ -41,13 +48,36 @@ export default function Page({
                     <Message key={ index } message={ message } />
                 )) }
             </div>
-            <SendMessage de={sendMessage} />
+            <SendMessage
+                channel={channelID}
+                server={serverID}
+                author={user}
+                data={sendMessage}
+            />
         </>
     )
 }
 
-function SendMessage( { de }: { de: ( channel: string, message: string, author: string ) => void } ) {
-    console.log( "de" )
+function SendMessage( {
+    channel: channelID,
+    server: serverID,
+    author,
+    data
+}: {
+    channel: string,
+    server: string,
+    author: {
+        id: string;
+        username: string;
+        image: string;
+    }
+    data: ( server: string, channel: string, message: string, author: {
+        id: string;
+        username: string;
+        image: string;
+    } ) => void
+}) {
+
     const [ message, setMessage ] = useState( "" );
     return (
         <div className="flex items-center px-20 py-5 bg-neutral-900/95 gap-2">
@@ -57,11 +87,11 @@ function SendMessage( { de }: { de: ( channel: string, message: string, author: 
                 onChange={ ( e ) => setMessage( e.target.value ) }
                 onKeyDown={ ( e ) => {
                     if( e.key === "Enter" )
-                        de( "1", message, "1" )
+                        data( serverID, channelID, message, author )
                 }}
             />
             <Button
-                onClick={() => de( "1", "Hello, world!", "1" )}
+                onClick={() => data( serverID, channelID, message, author )}
                 variant="secondary"
                 disabled={ message.length === 0 }
             >
@@ -74,13 +104,15 @@ function SendMessage( { de }: { de: ( channel: string, message: string, author: 
 function Message(
     { message }:
     { message: _Message }
-    ) { 
+    ) {
         console.log( message )
 
         return (
             <div className="flex space-x-4 group">
                 <div className="w-10 h-10 bg-neutral-800 rounded-full relative">
-                    <img 
+                    <Image
+                        height={ 40 }
+                        width={ 40 }
                         src={ message.author.image }
                         alt={ message.author.username }
                         className="w-10 h-10 rounded-full min-w-10 min-h-10"
@@ -97,6 +129,6 @@ function Message(
                 </div>
             </div>
         )
-        
+
 
     }
