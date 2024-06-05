@@ -51,7 +51,7 @@ export default function Page({
             <SendMessage
                 channel={channelID}
                 server={serverID}
-                author={user}
+                author={contextValue.user}
                 data={sendMessage}
             />
         </>
@@ -105,8 +105,6 @@ function Message(
     { message }:
     { message: _Message }
     ) {
-        console.log( message )
-
         return (
             <div className="flex space-x-4 group">
                 <div className="w-10 h-10 bg-neutral-800 rounded-full relative">

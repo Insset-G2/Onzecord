@@ -47,15 +47,27 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
 
     const [ messages, setMessages ] = useState<Message[ ]>( [ ] );
     const [ contextValue, setContextValue ] = useState( {
+        user: {
+            username: "",
+            description: "",
+            image: "",
+        },
         servers: [ ],
         users: [ ],
         selectedServer: null,
         selectedChannel: null,
     } );
-    const socket = useWebsocket( "ws://localhost:3000" );
+    const socket = useWebsocket( "ws://localhost:8080" );
+
+    useEffect(() => {
+
+        if( contextValue.user.username && contextValue.user.username.length > 0 )
+            socket?.connect( )
+    }, [ contextValue, contextValue.user, socket ])
 
     socket?.on( "connect", ( ) => {
         socket.emit( "getServers" )
+        socket.emit( "newUser", contextValue.user )
     })
 
     socket?.on( "getServers", ( value ) => {
@@ -77,6 +89,8 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
             image: string;
         }
     ) {
+        console.log( "send msg" )
+        console.log(serverID, channelID, message, author )
         socket?.emit( "sendMessage", { serverID, channelID, message, author } );
     }
 
@@ -85,7 +99,7 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
     }
 
     function joinChannel( serverID: string, channelID: string ) {
-        socket?.emit( "joinChannel", { serverID, channelID } );
+        socket?.emit( "joinChannel", { serverID, channelID, user: contextValue.user })
     }
 
     function getServers( server: string ) {
@@ -109,10 +123,10 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
             contextValue,
             setContextValue,
             messages,
-            user: {
-                username: Math.random().toString(36).substring(7),
+            user : {
+                username : "",
                 description: "",
-                image: "https://bla.com",
+                image: "",
             },
             users: [{
                 username: "Jérémy",

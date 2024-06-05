@@ -7,7 +7,7 @@ export const useWebsocket = ( url: string ) => {
 
     useEffect( ( ) => {
         const newSocket = io( url, {
-            autoConnect: true,
+            autoConnect: false,
         });
         setSocket( newSocket );
 

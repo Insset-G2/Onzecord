@@ -10,15 +10,15 @@ import {
   } from "@/components/ui/dropdown-menu"
 
 import {
-AlertDialog,
-AlertDialogAction,
-AlertDialogCancel,
-AlertDialogContent,
-AlertDialogDescription,
-AlertDialogFooter,
-AlertDialogHeader,
-AlertDialogTitle,
-AlertDialogTrigger,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
 import {
@@ -35,17 +35,19 @@ import { SlashIcon , ChevronDownIcon, DiscIcon } from "@radix-ui/react-icons"
 import useContextProvider from "@/hooks/useContextProvider"
 import Link from "next/link"
 import { Button } from "./ui/button"
-import { PlusIcon } from "lucide-react"
+import { UserIcon } from "lucide-react"
 import { useEffect } from "react"
 
 export default function Navbar( ) {
 
     const {
         setContextValue,
-        contextValue
+        contextValue,
+        user
     } = useContextProvider( );
 
     useEffect( ( ) => {
+        console.log( "context update !")
         console.log( contextValue );
     }, [ contextValue ] )
 
@@ -133,9 +135,9 @@ export default function Navbar( ) {
                                                                 </Link>
                                                             </BreadcrumbLink>
                                                         </DropdownMenuItem>
-                                                    ))
+                                                    )
+                                                )
                                             }
-
 
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -148,8 +150,8 @@ export default function Navbar( ) {
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
                         <Button variant={ "outline" } className="bg-neutral-900/50">
-                            <PlusIcon className="mr-2 h-4 w-4" />
-                            Create server
+                            <UserIcon className="mr-2 h-4 w-4" />
+                            { contextValue.user.username }
                         </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>

@@ -68,38 +68,37 @@ app.prepare().then(() => {
     });
 
     socket.on( "joinChannel", ({ serverID, channelID }) => {
-        console.log( `Socket ${socket.id} joined ${serverID}/${channelID}` );
         socket.join( `${serverID}/${channelID}` );
     });
 
     socket.on( "getMessages", ( { serverID, channelID } ) => {
 
-      const sentences = Math.floor(Math.random() * 30) + 10;
-      const texts = Array.from({ length: sentences }, () => lorem.generateWords( sentences ));
-      const messages = texts.map( ( content, index ) => ({
-        id: index,
-        content,
-        author: {
-          id: [1, 2, 3][Math.floor(Math.random() * 3) ],
-          username: "User [" + Math.random().toString(36).substring(7) + "]",
-          image: `https://avatar.vercel.sh/${Math.random().toString(36).substring(7)}`
-        },
-        timestamp: Date.now(),
+      // const sentences = Math.floor(Math.random() * 30) + 10;
+      // const texts = Array.from({ length: sentences }, () => lorem.generateWords( sentences ));
+      // const messages = texts.map( ( content, index ) => ({
+      //   id: index,
+      //   content,
+      //   author: {
+      //     username: 
+      //     image: `https://avatar.vercel.sh/${Math.random().toString(36).substring(7)}`
+      //   },
+      //   timestamp: Date.now(),
 
-      }) );
+      // }) );
 
-      socket.emit( "getMessages", { serverID, channelID, messages });
+      // socket.emit( "getMessages", { serverID, channelID, messages });
 
     });
 
     socket.on( "sendMessage", ({ serverID, channelID, message, author }) => {
 
+      console.log( author )
+
       const reply = {
         id: Math.floor(Math.random() * 1000),
         message,
         author: {
-          id: [1, 2, 3][Math.floor(Math.random() * 3) ],
-          username: "User [" + Math.random().toString(36).substring(7) + "]",
+          username: author.username,
           image: `https://avatar.vercel.sh/${Math.random().toString(36).substring(7)}`
         },
         timestamp: Date.now(),

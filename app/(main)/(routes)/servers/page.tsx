@@ -1,8 +1,6 @@
 "use client"
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import useContextProvider from "@/hooks/useContextProvider"
-import { useWebsocket } from "@/hooks/useWebsocket";
 
 export default function Servers( ) {
 
