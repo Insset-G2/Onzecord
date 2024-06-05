@@ -55,78 +55,87 @@ export default function Layout({ children }: Readonly<{ children: React.ReactNod
 
     const form = useForm({
         resolver: zodResolver(formSchema),
+        defaultValues: {
+            username: "",
+            description: ""
+        }
     })
 
-    return (
+    if (isClient && !contextValue.user.username ) {
+        return (
+            <AlertDialog open={open} onOpenChange={setOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Hello there!
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Before you can start chatting, we need to know a little bit about you.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit((values) => {
+                            setContextValue({
+                                ...contextValue,
+                                user: {
+                                    ...contextValue.user,
+                                    image: `https://avatar.vercel.sh/${values.username}.png`,
+                                    username: values.username,
+                                    description: values.description
+                                }
+                            })
+                            setOpen(false);
+                        })} className="space-y-8">
+                            <FormField
+                                control={form.control}
+                                name="username"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Username</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Username" {...field} />
+                                        </FormControl>
+                                        <FormDescription>
+                                            This is your public display name.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="description"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Description</FormLabel>
+                                        <FormControl>
+                                            <Textarea placeholder="Description" {...field} />
+                                        </FormControl>
+                                        <FormDescription>
+                                            This is your public description, ( optional, max 30 characters )
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <Button className="w-full" type="submit">Submit</Button>
+                        </form>
+                    </Form>
+                </AlertDialogContent>
+            </AlertDialog>
+        )
+    } else if( contextValue.user.username ) {
+        return (
         <div className="bg-neutral-900/95">
-            <ServerNavbar/>
-
-            {
-                isClient && !user.username && (
-                    <AlertDialog open={open} onOpenChange={setOpen}>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Salut</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Avant de pouvoir intéragir avec les autres utilisateurs, vous devez au préalable indiquer votre psuedo.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-
-                            <Form {...form}>
-                                <form onSubmit={form.handleSubmit(( values ) => {
-                                    setContextValue({
-                                        ...contextValue,
-                                        user: {
-                                            ...contextValue.user,
-                                            username: values.username,
-                                            description: values.description
-                                        }
-                                    })
-                                    setOpen(false);
-                                })} className="space-y-8">
-                                    <FormField
-                                        control={form.control}
-                                        name="username"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Username</FormLabel>
-                                                <FormControl>
-                                                    <Input placeholder="Username" {...field} />
-                                                </FormControl>
-                                                <FormDescription>
-                                                    This is your public display name.
-                                                </FormDescription>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="description"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Description</FormLabel>
-                                                <FormControl>
-                                                    <Textarea placeholder="Description" {...field} />
-                                                </FormControl>
-                                                <FormDescription>
-                                                    This is your public description, ( optional, max 30 characters )
-                                                </FormDescription>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <Button className="w-full" type="submit">Submit</Button>
-                                </form>
-                            </Form>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                )
-            }
-
+            <ServerNavbar />
             <div className="h-[calc(100vh-65px)]">
                 { children }
             </div>
         </div>
-    )
+        )
+    }
+
+    return null;
+
 }

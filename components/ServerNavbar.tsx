@@ -46,11 +46,6 @@ export default function Navbar( ) {
         user
     } = useContextProvider( );
 
-    useEffect( ( ) => {
-        console.log( "context update !")
-        console.log( contextValue );
-    }, [ contextValue ] )
-
     return (
         <div className="w-full border-b border-neutral-600/40 bg-neutral-900/95 backdrop-blur supports-[backdrop-filter]:bg-neutral-900/30">
             <div className="mx-10 flex h-16 items-center justify-between">

@@ -1,11 +1,11 @@
 "use client"
 
 import useContextProvider from "@/hooks/useContextProvider"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { SendIcon } from "lucide-react"
-import { Message as _Message } from "@/components/ContextProvider"
+import { Message } from "@/components/ContextProvider"
 import Image from "next/image"
 
 export default function Page({
@@ -37,15 +37,13 @@ export default function Page({
         }))
     }, [ serverID, channelID, setContextValue ])
 
-    useEffect(() => {
-        console.log( messages )
-    }, [ messages ])
+    const ref = useRef<HTMLDivElement>( null );
 
     return (
         <>
-            <div className="flex-1 overflow-y-auto p-12 space-y-5 max-h-[-webkit-fill-available]">
-                { messages.map((message: _Message, index: number) => (
-                    <Message key={ index } message={ message } />
+            <div ref={ ref } className="flex-1 overflow-y-auto p-12 space-y-5 max-h-[-webkit-fill-available]">
+                { messages.map((message: Message, index: number) => (
+                    <DisplayMessage key={ index } message={ message } />
                 )) }
             </div>
             <SendMessage
@@ -62,7 +60,7 @@ function SendMessage( {
     channel: channelID,
     server: serverID,
     author,
-    data
+    data,
 }: {
     channel: string,
     server: string,
@@ -70,7 +68,7 @@ function SendMessage( {
         id: string;
         username: string;
         image: string;
-    }
+    },
     data: ( server: string, channel: string, message: string, author: {
         id: string;
         username: string;
@@ -78,16 +76,20 @@ function SendMessage( {
     } ) => void
 }) {
 
+    const ref = useRef<HTMLInputElement>( null );
     const [ message, setMessage ] = useState( "" );
     return (
         <div className="flex items-center px-20 py-5 bg-neutral-900/95 gap-2">
             <Input
+                ref={ ref }
                 placeholder="Enter your message..."
                 value={ message }
                 onChange={ ( e ) => setMessage( e.target.value ) }
                 onKeyDown={ ( e ) => {
-                    if( e.key === "Enter" )
+                    if( e.key === "Enter" ) {
                         data( serverID, channelID, message, author )
+                        setMessage( "" )
+                    }
                 }}
             />
             <Button
@@ -101,10 +103,13 @@ function SendMessage( {
     )
 }
 
-function Message(
+function DisplayMessage(
     { message }:
-    { message: _Message }
+    { message: Message }
     ) {
+
+        console.log( message )
+
         return (
             <div className="flex space-x-4 group">
                 <div className="w-10 h-10 bg-neutral-800 rounded-full relative">
@@ -120,10 +125,10 @@ function Message(
                 <div className="flex flex-col">
                     <p>{ message.author.username }
                         <span className="opacity-0 text-neutral-500 group-hover:!opacity-100">
-
+                            { message.timestamp }
                         </span>
                     </p>
-                    <p className="text-neutral-500">{ message.content }</p>
+                    <p className="text-neutral-500">{ message.message }</p>
                 </div>
             </div>
         )

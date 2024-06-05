@@ -62,54 +62,70 @@ app.prepare().then(() => {
   }
 
   io.on( "connection", ( socket ) => {
-
+    console.log( "New connection", socket.id );
     socket.on("getServers", () => {
       sendServer( socket );
     });
 
-    socket.on( "joinChannel", ({ serverID, channelID }) => {
-        socket.join( `${serverID}/${channelID}` );
+    socket.on( "joinChannel", ({ serverID, channelID, user }) => {
+
+        console.log( socket.id, "joinChannel", serverID, channelID, user.username)
+
+        socket.join( `${ serverID }/${ channelID }` );
+        users[ socket.id ] = { serverID, channelID, user };
+
+        io.emit(
+            "joinChannel", {
+                users: Object
+                    .values( users )
+                    .filter( u => u.serverID === serverID && u.channelID === channelID )
+                    .map( u => u.user )
+            }
+        );
     });
 
     socket.on( "getMessages", ( { serverID, channelID } ) => {
 
-      // const sentences = Math.floor(Math.random() * 30) + 10;
-      // const texts = Array.from({ length: sentences }, () => lorem.generateWords( sentences ));
-      // const messages = texts.map( ( content, index ) => ({
-      //   id: index,
-      //   content,
-      //   author: {
-      //     username: 
-      //     image: `https://avatar.vercel.sh/${Math.random().toString(36).substring(7)}`
-      //   },
-      //   timestamp: Date.now(),
+        console.log( "getMessages", serverID, channelID )
 
-      // }) );
-
-      // socket.emit( "getMessages", { serverID, channelID, messages });
+        socket.emit( "getMessages", {
+            serverID, channelID, messages: messages?.[ serverID ]?.[ channelID ] || [ ]
+        });
 
     });
 
     socket.on( "sendMessage", ({ serverID, channelID, message, author }) => {
 
-      console.log( author )
+        console.log( "sendMessage", serverID, channelID, message, author )
 
-      const reply = {
-        id: Math.floor(Math.random() * 1000),
-        message,
-        author: {
-          username: author.username,
-          image: `https://avatar.vercel.sh/${Math.random().toString(36).substring(7)}`
-        },
-        timestamp: Date.now(),
-      };
-       console.log( reply )
-      console.log( `Send message to ${serverID}/${channelID}` );
-      io.to( `${serverID}/${channelID}` ).emit( "newMessage", { serverID, channelID, reply });
+        if( !messages[ serverID ] )
+            messages[ serverID ] = { };
+
+        if( !messages[ serverID ][ channelID ] )
+            messages[ serverID ][ channelID ] = [ ];
+
+        messages[ serverID ][ channelID ].push({
+            message,
+            author,
+            timestamp: Date.now(),
+        });
+
+        io.to(
+            `${ serverID }/${ channelID }`
+        ).emit( "newMessage", {
+            serverID, channelID, content: {
+                message,
+                author,
+                timestamp: Date.now(),
+            }
+        });
     })
 
     socket.on("disconnect", () => {
       delete users[ socket.id ];
+      io.emit( "joinChannel", {
+        users: Object.values( users ).map( u => u.user )
+      });
     });
   });
 
@@ -122,23 +138,3 @@ app.prepare().then(() => {
       console.log(`> Ready on http://${hostname}:${port}`);
     });
 });
-
-
-// Generate lorem ipsum messages
-const lorem = new LoremIpsum({
-  sentencesPerParagraph: {
-    max: 8,
-    min: 4
-  },
-  wordsPerSentence: {
-    max: 16,
-    min: 4
-  }
-});
-
-
-
-function generateMessage( ) {
-  const sentences = Math.floor(Math.random() * 10) + 4;
-  return lorem.generateWords( sentences );
-}

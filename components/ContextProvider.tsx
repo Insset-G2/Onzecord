@@ -39,7 +39,7 @@ export interface Message {
         username: string;
         image: string;
     }
-    content: string;
+    message: string;
     timestamp: string;
 }
 
@@ -63,22 +63,45 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
 
         if( contextValue.user.username && contextValue.user.username.length > 0 )
             socket?.connect( )
-    }, [ contextValue, contextValue.user, socket ])
+        else
+            return;
 
-    socket?.on( "connect", ( ) => {
-        socket.emit( "getServers" )
-        socket.emit( "newUser", contextValue.user )
-    })
+        socket?.on("connect", () => {
+            console.log("Connected to server")
+            socket.emit("getServers")
+        })
 
-    socket?.on( "getServers", ( value ) => {
-        console.log( "Got servers:", value)
-        setContextValue((contextValue: any) => {
-            return {
+        socket?.on("getServers", (value) => {
+            setContextValue((contextValue: any) => {
+                return {
+                    ...contextValue,
+                    servers: value.servers
+                }
+            });
+        })
+
+        socket?.on("joinChannel", ({ users }) => {
+
+            setContextValue((contextValue: any) => ({
                 ...contextValue,
-                servers: value.servers
-            }
-        });
-    })
+                users: users
+            }))
+        })
+
+        socket?.on("getMessages", (value) => {
+            console.log("Got messages from server")
+            setMessages(value.messages);
+        })
+
+        socket?.on("newMessage", (value: { content: Message }) => {
+
+            setMessages([
+                ...messages,
+                value.content
+            ])
+        })
+
+    }, [contextValue, contextValue.user, messages, socket])
 
     function sendMessage(
         serverID: string,
@@ -89,8 +112,6 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
             image: string;
         }
     ) {
-        console.log( "send msg" )
-        console.log(serverID, channelID, message, author )
         socket?.emit( "sendMessage", { serverID, channelID, message, author } );
     }
 
@@ -106,18 +127,6 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
         socket?.emit( "getServers", { server } );
     }
 
-    socket?.on( "getMessages", ( value ) => {
-        setMessages( value.messages );
-    })
-
-    socket?.on("newMessage", (value: { reply: Message } ) => {
-        console.log( "Got new message:", value )
-        setMessages([
-            ...messages,
-            value.reply
-        ])
-    })
-
     return (
         <Context.Provider value={{
             contextValue,
@@ -128,12 +137,7 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
                 description: "",
                 image: "",
             },
-            users: [{
-                username: "Jérémy",
-                description: "Hello, this is a description",
-                id: "1",
-                image: "https://bla.com",
-            }],
+            users: [ ],
             sendMessage,
             getMessages,
             joinChannel,
