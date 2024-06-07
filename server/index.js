@@ -57,46 +57,9 @@ app.prepare().then(() => {
         name: "Channel 3.2",
       }],
     }] });
-
-
   }
 
-  io.on( "connection", ( socket ) => {
-    console.log( "New connection", socket.id );
-    socket.on("getServers", () => {
-      sendServer( socket );
-    });
-
-    socket.on( "joinChannel", ({ serverID, channelID, user }) => {
-
-        console.log( socket.id, "joinChannel", serverID, channelID, user.username)
-
-        socket.join( `${ serverID }/${ channelID }` );
-        users[ socket.id ] = { serverID, channelID, user };
-
-        io.emit(
-            "joinChannel", {
-                users: Object
-                    .values( users )
-                    .filter( u => u.serverID === serverID && u.channelID === channelID )
-                    .map( u => u.user )
-            }
-        );
-    });
-
-    socket.on( "getMessages", ( { serverID, channelID } ) => {
-
-        console.log( "getMessages", serverID, channelID )
-
-        socket.emit( "getMessages", {
-            serverID, channelID, messages: messages?.[ serverID ]?.[ channelID ] || [ ]
-        });
-
-    });
-
-    socket.on( "sendMessage", ({ serverID, channelID, message, author }) => {
-
-        console.log( "sendMessage", serverID, channelID, message, author )
+    function addMessage({ serverID, channelID, message, author }) {
 
         if( !messages[ serverID ] )
             messages[ serverID ] = { };
@@ -119,15 +82,99 @@ app.prepare().then(() => {
                 timestamp: Date.now(),
             }
         });
+    }
+
+    io.on( "connection", ( socket ) => {
+
+    socket.on("getServers", () => {
+        sendServer( socket );
+    });
+
+    socket.on( "joinChannel", ({ serverID, channelID, user }) => {
+
+        socket.join( `${ serverID }/${ channelID }` );
+
+        const {
+            serverID: oldServerID,
+            channelID: oldChannelID,
+        } = users[ socket.id ] || { };
+
+        users[ socket.id ] = { serverID, channelID, user };
+
+        if( oldServerID && oldChannelID ) {
+            io.to( `${ oldServerID }/${ oldChannelID }` ).emit(
+                "joinChannel", {
+                    users: Object
+                        .values( users )
+                        .filter( u => u.serverID === oldServerID && u.channelID === oldChannelID )
+                        .map( u => u.user )
+                }
+            );
+        }
+
+        io.to( `${ serverID }/${ channelID }` ).emit(
+            "joinChannel", {
+                users: Object
+                    .values( users )
+                    .filter( u => u.serverID === serverID && u.channelID === channelID )
+                    .map( u => u.user )
+            }
+        );
+    });
+
+    socket.on( "getMessages", ( { serverID, channelID } ) => {
+
+        console.log( "getMessages", serverID, channelID )
+
+        socket.emit( "getMessages", {
+            serverID, channelID, messages: messages?.[ serverID ]?.[ channelID ] || [ ]
+        });
+
+    });
+
+    socket.on( "sendMessage", ({ serverID, channelID, message, author }) => {
+        addMessage({ serverID, channelID, message, author });
     })
 
     socket.on("disconnect", () => {
-      delete users[ socket.id ];
-      io.emit( "joinChannel", {
+        delete users[ socket.id ];
+        io.emit( "joinChannel", {
         users: Object.values( users ).map( u => u.user )
-      });
+        });
     });
-  });
+
+    socket.on( "createReminder", ({ serverID, channelID, author, reminder, description, time }) => {
+
+        fetch( process.env.REMINDER_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                title: reminder,
+                trigger_time: time,
+                description
+            })
+
+        })
+            .then( resp => resp.json() )
+            .then( resp => {
+                socket.emit( "reminderAdded", {
+                    reminder, description, time, resp
+                });
+
+                addMessage({ serverID, channelID, message: `${ author } created a reminder: ${ reminder } at ${ new Date( time ).toLocaleString() }`, author: { username: "Reminder", image: "https://cdn.discordapp.com/attachments/1181959975455694878/1248572504348557394/g4.png?ex=66642742&is=6662d5c2&hm=f5efea630ab597a5d4d33513980947fa2990d767f9e150003282794f762b8d3f&" } });
+            })
+            .catch( err => {
+                socket.emit( "reminderAdded", {
+                    reminder, description, time, error: err
+                })
+                addMessage({ serverID, channelID, message: `${ author } created a reminder: ${ reminder } at ${ new Date( time ).toLocaleString() }`, author: { username: "Reminder", image: "https://cdn.discordapp.com/attachments/1181959975455694878/1248572504348557394/g4.png?ex=66642742&is=6662d5c2&hm=f5efea630ab597a5d4d33513980947fa2990d767f9e150003282794f762b8d3f&" } });
+            });
+
+    });
+
+    });
 
   httpServer
     .once("error", (err) => {

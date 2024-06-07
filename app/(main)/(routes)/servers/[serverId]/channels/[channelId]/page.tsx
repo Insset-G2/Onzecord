@@ -10,6 +10,9 @@ import Image from "next/image"
 import Time from "@/components/Time."
 import { CommandMenu } from "@/components/CommandMenu"
 import { motion } from "framer-motion"
+import Markdown from "react-markdown"
+import rehypeHighlight from 'rehype-highlight'
+import { Textarea } from "@/components/ui/textarea"
 
 export default function Page({
     params: { serverID, channelID }
@@ -91,7 +94,7 @@ function SendMessage( {
         <div className="flex items-center px-20 py-5 gap-2">
             <CommandMenu />
             <div className="relative flex-1">
-                <Input
+                <Textarea
                     ref={ ref }
                     value={ message }
                     onFocus={ () => setShowPlaceholder( false ) }
@@ -120,14 +123,6 @@ function SendMessage( {
 
 
             </div>
-
-            <Button
-                onClick={() => data( serverID, channelID, message, author )}
-                variant="secondary"
-                disabled={ message.length === 0 }
-            >
-                <SendIcon className="h-4 w-4" />
-            </Button>
         </div>
     )
 }
@@ -158,7 +153,17 @@ function DisplayMessage(
                         </div>
                     </small>
                 </p>
-                <p className="text-neutral-300/80">{ message.message }</p>
+
+                <p className="
+                    text-neutral-300/90 whitespace-pre-wrap
+                    [&>pre]:bg-neutral-950/20 [&>pre]:mt-2 [&>pre]:rounded-md [&>pre]:p-4 [&>pre]:border [&>pre]:border-neutral-800
+                    [&>h1]:text-xl [&>h2]:text-lg [&>h3]:text-base [&>h4]:text-sm [&>h5]:text-xs [&>h6]:text-xs
+                    [&>a]:text-blue-500 [&>a]:hover:text-blue-400 [&>a]:underline [&>a]:hover:no-underline
+                    [&>ul]:list-disc [&>ol]:list-decimal [&>li]:ml-4 [&>li]:mt-2 [&>li]:mb-2
+                    [&>blockquote]:border-l-4 [&>blockquote]:border-neutral-500 [&>blockquote]:pl-4 [&>blockquote]:mx-1
+                ">
+                    <Markdown rehypePlugins={[rehypeHighlight]}>{ message.message }</Markdown>
+                </p>
             </div>
         </div>
     )
