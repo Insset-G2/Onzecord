@@ -61,11 +61,6 @@ export default function Navbar( ) {
                             <DropdownMenu>
                                 <DropdownMenuTrigger className="flex items-center gap-1">
 
-                                    <Avatar className="h-7 w-7 mr-2">
-                                        <AvatarImage src="" />
-                                        <AvatarFallback>CN</AvatarFallback>
-                                    </Avatar>
-
                                     { contextValue.selectedServer ? (
                                         contextValue.servers.find( ( server: any ) => server.id == contextValue.selectedServer )?.name
                                     ) : (
@@ -101,10 +96,6 @@ export default function Navbar( ) {
                                 <BreadcrumbItem>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger className="flex items-center gap-1">
-                                            <Avatar className="h-7 w-7 mr-2">
-                                                <AvatarImage src="" />
-                                                <AvatarFallback>CN</AvatarFallback>
-                                            </Avatar>
                                             { contextValue.selectedServer && contextValue?.servers.length > 0 && contextValue.selectedChannel ? (
                                                 contextValue.servers.find( ( server: any ) => server.id == contextValue.selectedServer )
                                                     .channels.find( ( channel: any ) => channel.id == contextValue.selectedChannel )?.name
@@ -117,7 +108,6 @@ export default function Navbar( ) {
                                         <DropdownMenuContent align="start">
                                             {
                                                 contextValue.selectedServer && contextValue?.servers.length > 0 &&
-
                                                 contextValue?.servers.find( ( server: any ) => server.id == contextValue.selectedServer )
                                                     .channels.map( ( channel: any ) => (
                                                         <DropdownMenuItem key={ channel.id }>
@@ -149,6 +139,7 @@ export default function Navbar( ) {
                             { contextValue.user.username }
                         </Button>
                     </AlertDialogTrigger>
+
                     <AlertDialogContent>
                         <AlertDialogHeader>
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>

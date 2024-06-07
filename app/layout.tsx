@@ -15,7 +15,7 @@ export default function RootLayout({
     return (
     <html lang="en">
         <ContextProvider>
-            <body className={ `${ inter.className } dark bg-neutral-900 text-neutral-100 h-screen` }>
+            <body className={ `${ inter.className } dark bg-neutral-900 text-neutral-100 h-screen overflow-hidden` }>
                 { children }
                 <Toaster />
             </body>
