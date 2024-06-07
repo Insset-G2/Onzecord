@@ -2,6 +2,7 @@
 
 import { createContext, useState, useMemo, useEffect } from "react";
 import { useWebsocket } from "@/hooks/useWebsocket";
+import { toast } from "sonner";
 export const Context = createContext({
     socket: null as any,
     contextValue: {
@@ -28,7 +29,8 @@ export const Context = createContext({
         username: string;
         image: string;
     } ) => { },
-    getMessages: ( serverID: string, channelID: string ) => { }
+    getMessages: ( serverID: string, channelID: string ) => { },
+    createReminder: ( serverID: string, channelID: string, author: string, reminder: string, description: string, time: string ) => { },
 });
 
 
@@ -57,17 +59,18 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
         selectedServer: null,
         selectedChannel: null,
     } );
-    const socket = useWebsocket( "ws://localhost:8080" );
+    const socket = useWebsocket(
+        process.env.production ? "https://onzecord-6u2pqz2qca-od.a.run.app" : "http://localhost:8080"
+     );
+
+    useEffect(() => {
+        if( contextValue.user.username && contextValue.user.username.length > 0 )
+            socket?.connect( )
+    }, [contextValue.user.username, socket])
 
     useEffect(() => {
 
-        if( contextValue.user.username && contextValue.user.username.length > 0 )
-            socket?.connect( )
-        else
-            return;
-
         socket?.on("connect", () => {
-            console.log("Connected to server")
             socket.emit("getServers")
         })
 
@@ -101,7 +104,15 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
             ])
         })
 
-    }, [contextValue, contextValue.user, messages, socket])
+        socket?.on( "reminderAdded", ( value: { reminder: string, description: string, time: string } ) => {
+            // if ( "error" in value )
+            //     return toast.error( "An error occurred while creating the reminder" );
+
+            toast.success( `Reminder ${ value.reminder } created for ${ new Date( value.time ).toLocaleString( ) }` );
+
+        })
+
+    }, [ socket, messages ])
 
     function sendMessage(
         serverID: string,
@@ -127,6 +138,10 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
         socket?.emit( "getServers", { server } );
     }
 
+    function createReminder( serverID: string, channelID: string, author: string, reminder: string, description: string, time: string ) {
+        socket?.emit( "createReminder", { serverID, channelID, author, reminder, description, time } );
+    }
+
     return (
         <Context.Provider value={{
             contextValue,
@@ -141,7 +156,8 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
             sendMessage,
             getMessages,
             joinChannel,
-            socket
+            socket,
+            createReminder,
         }}>
             { children }
         </Context.Provider>

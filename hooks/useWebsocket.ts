@@ -7,6 +7,7 @@ export const useWebsocket = ( url: string ) => {
 
     useEffect( ( ) => {
         const newSocket = io( url, {
+            port: 8080,
             autoConnect: false,
         });
         setSocket( newSocket );
