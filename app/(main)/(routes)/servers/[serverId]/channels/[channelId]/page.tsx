@@ -3,8 +3,8 @@
 import useContextProvider from "@/hooks/useContextProvider"
 import { useEffect, useRef, useState } from "react"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { SendIcon } from "lucide-react"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { FilePlus2, Paperclip, SendIcon } from "lucide-react"
 import { Message } from "@/components/ContextProvider"
 import Image from "next/image"
 import Time from "@/components/Time."
@@ -13,12 +13,22 @@ import { motion } from "framer-motion"
 import Markdown from "react-markdown"
 import rehypeHighlight from 'rehype-highlight'
 import { Textarea } from "@/components/ui/textarea"
+import { FileUploader, FileInput } from "@/components/ui/file-upload"
+import { cn } from "@/lib/utils"
+import { v4 as UUIDV4 } from "uuid"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+  } from "@/components/ui/popover"
+import FileUploadDropzone from "@/components/FileUploadDropzone"
 
 export default function Page({
     params: { serverID, channelID }
 }: Readonly<{ params: { serverID: string, channelID: string } }>) {
 
     const [ openCommandPalette, setOpenCommandPalette ] = useState( false );
+    const ref = useRef<HTMLDivElement>( null );
 
     const { contextValue,
         setContextValue,
@@ -36,7 +46,6 @@ export default function Page({
             getMessages( serverID, channelID )
     }, [ socket?.connected ])
 
-
     useEffect(() => {
         setContextValue((contextValue: any) => ({
             ...contextValue,
@@ -44,8 +53,12 @@ export default function Page({
             selectedChannel: channelID
         }))
     }, [ serverID, channelID, setContextValue ])
-
-    const ref = useRef<HTMLDivElement>( null );
+    
+    useEffect(() => {
+        console.log( messages )
+        if( ref.current )
+            ref.current.scrollTop = ref.current.scrollHeight
+    }, [ messages ])
 
     return (
         <>
@@ -71,7 +84,7 @@ function SendMessage( {
     author,
     data,
 }: {
-        setOpenCommandPalette: ( value: boolean ) => void,
+    setOpenCommandPalette: ( value: boolean ) => void,
     channel: string,
     server: string,
     author: {
@@ -79,48 +92,57 @@ function SendMessage( {
         username: string;
         image: string;
     },
-    data: ( server: string, channel: string, message: string, author: {
-        id: string;
-        username: string;
-        image: string;
-    } ) => void
+    data: ( 
+        server: string, 
+        channel: string, 
+        message: string, 
+        author: {
+            id: string;
+            username: string;
+            image: string;
+        },
+        files: { id: string }[] | []
+    ) => void
 }) {
 
-    const ref = useRef<HTMLInputElement>( null );
-    const [ message, setMessage ] = useState( "" );
-    const [ showPlaceholder, setShowPlaceholder ] = useState( true );
+    const ref = useRef<HTMLTextAreaElement>( null );
     return (
 
         <div className="flex items-center px-20 py-5 gap-2">
             <CommandMenu />
             <div className="relative flex-1">
-                <Textarea
-                    ref={ ref }
-                    value={ message }
-                    onFocus={ () => setShowPlaceholder( false ) }
-                    onBlur={ () => setShowPlaceholder( true ) }
-                    onChange={ ( e ) => setMessage( e.target.value ) }
-                    onKeyDown={ ( e ) => {
+                <FileUploadDropzone
+                    placeholder=""
+                    onSubmit={ ( e ) => {
+                        if ( e.files && e.files.length > 0 ) {
 
-                        if( e.key === "Enter" && message.length > 0 && !e.shiftKey ) {
-                            data( serverID, channelID, message, author )
-                            setMessage( "" )
+                            const promises = Promise.all(
+                                e.files?.map(async (file) => {
+                                    const formData = new FormData();
+                                    formData.append( "file", file);
+                                    formData.append( "name", `${ UUIDV4() }.${ file.name.split(".").pop() }` );
+                                    const response = await fetch("/api/upload", {
+                                        method: "POST",
+                                        body: formData,
+                                    });
+                                    return await response.json();
+                                }) ?? []
+                            );
+
+                            promises.then(( files ) => {
+                                data( serverID, channelID, e.message, author, [
+                                    ...files.map( file => {
+                                        return file.id
+                                    })
+                                ])
+                            });
+
+                        } else {
+                            data( serverID, channelID, e.message, author, [ ] )
                         }
-                    }}
+                        
+                    }} 
                 />
-                { message.length === 0 && showPlaceholder ? (
-                    <motion.span
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-neutral-400 absolute left-4 top-2 mr-2 text-sm pointer-events-none"
-                    >
-                        Write a message or press { " " }
-                        <span className="bg-neutral-800 text-neutral-300 py-0.5 px-1 rounded text-sm font-mono">ctrl k</span>
-                        { " " } to open the command palette
-                    </motion.span>
-                    ) : null
-                }
-
 
             </div>
         </div>
@@ -139,7 +161,6 @@ function DisplayMessage(
                     alt={ message.author.username }
                     className="w-10 h-10 rounded-full min-w-10 min-h-10"
                 />
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse absolute right-0 bottom-0"></div>
             </div>
             <div className="flex flex-col">
                 <p className="flex items-baseline">
@@ -156,7 +177,7 @@ function DisplayMessage(
 
                 <p className="
                     text-neutral-300/90 whitespace-pre-wrap
-                    [&>pre]:bg-neutral-950/20 [&>pre]:mt-2 [&>pre]:rounded-md [&>pre]:p-4 [&>pre]:border [&>pre]:border-neutral-800
+                    [&>pre]:bg-neutral-950/20 [&>pre]:mt-2 [&>pre]:rounded-md [&>pre]:border [&>pre]:border-neutral-800 [&>pre]:overflow-x-auto [&>pre]:text-sm
                     [&>h1]:text-xl [&>h2]:text-lg [&>h3]:text-base [&>h4]:text-sm [&>h5]:text-xs [&>h6]:text-xs
                     [&>a]:text-blue-500 [&>a]:hover:text-blue-400 [&>a]:underline [&>a]:hover:no-underline
                     [&>ul]:list-disc [&>ol]:list-decimal [&>li]:ml-4 [&>li]:mt-2 [&>li]:mb-2
@@ -164,6 +185,58 @@ function DisplayMessage(
                 ">
                     <Markdown rehypePlugins={[rehypeHighlight]}>{ message.message }</Markdown>
                 </p>
+                <div className="flex gap-1">
+                    <div>
+                        { message.files[0] && (
+                            <div
+                                className="relative rounded-sm"
+                                style={{ 
+                                    width: "300px", 
+                                    height: "300px", 
+                                    background: `url(/upload/${ message.files[0] })`,
+                                    backgroundSize: "cover",
+                                    backgroundPosition: "center"
+                                }}
+                            />
+                        )}
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        { message.files[1] && (
+                            <div
+                                className="relative rounded-sm"
+                                style={{ 
+                                    width: `calc( ${ message.files.length > 2 ? "296px" : "300px" } / ${ message.files.length > 2 ? 2 : 1 })`,
+                                    height: `calc( ${ message.files.length > 2 ? "296px" : "300px" } / ${ message.files.length > 2 ? 2 : 1 })`,
+                                    background: `url(/upload/${ message.files[1] })`,
+                                    backgroundSize: "cover",
+                                    backgroundPosition: "center"
+                                }}
+                            />
+                        )}
+                        { message.files[2] && (
+                            <div
+                                className="relative rounded-sm"
+                                style={{ 
+                                    width: `calc( 296px / 2)`,
+                                    height: `calc( 296px / 2)`,
+                                    background: `url(/upload/${ message.files[2] })`,
+                                    backgroundSize: "cover",
+                                    backgroundPosition: "center"
+                                }}
+                            />
+                        )}
+                    </div>
+                </div>
+                <div>
+                    <Popover>
+                        <PopoverTrigger
+                            className="bg-neutral-800 border border-neutral-700 rounded-sm"
+                        >
+                            Open
+                        </PopoverTrigger>
+                        <PopoverContent>Place content for the popover here.</PopoverContent>
+                    </Popover>
+                </div>
             </div>
         </div>
     )

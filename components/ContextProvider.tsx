@@ -28,9 +28,10 @@ export const Context = createContext({
     sendMessage: ( serverID: string, channelID: string, message: string, author: {
         username: string;
         image: string;
-    } ) => { },
+    }, files: [ ] ) => { },
     getMessages: ( serverID: string, channelID: string ) => { },
     createReminder: ( serverID: string, channelID: string, author: string, reminder: string, description: string, time: string ) => { },
+    getCryptoGraphs: ( serverID: string, channelID: string, crypto: string ) => { }
 });
 
 
@@ -43,6 +44,7 @@ export interface Message {
     }
     message: string;
     timestamp: string;
+    files: string[ ];
 }
 
 export const ContextProvider = ({ children }: { children: React.ReactNode }) => {
@@ -68,13 +70,13 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
             socket?.connect( )
     }, [contextValue.user.username, socket])
 
-    useEffect(() => {
+    useEffect( ( ) => {
 
-        socket?.on("connect", () => {
+        socket?.on( "connect", () => {
             socket.emit("getServers")
         })
 
-        socket?.on("getServers", (value) => {
+        socket?.on( "getServers", (value) => {
             setContextValue((contextValue: any) => {
                 return {
                     ...contextValue,
@@ -83,34 +85,44 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
             });
         })
 
-        socket?.on("joinChannel", ({ users }) => {
+        socket?.on( "joinChannel", ({ users }) => {
 
             setContextValue((contextValue: any) => ({
                 ...contextValue,
                 users: users
             }))
+
         })
 
-        socket?.on("getMessages", (value) => {
+        socket?.on( "getMessages", (value) => {
             console.log("Got messages from server")
             setMessages(value.messages);
         })
 
         socket?.on("newMessage", (value: { content: Message }) => {
-
             setMessages([
                 ...messages,
                 value.content
             ])
+
         })
 
         socket?.on( "reminderAdded", ( value: { reminder: string, description: string, time: string } ) => {
-            // if ( "error" in value )
-            //     return toast.error( "An error occurred while creating the reminder" );
+
+            if ( "error" in value )
+                return toast.error( "An error occurred while creating the reminder" );
 
             toast.success( `Reminder ${ value.reminder } created for ${ new Date( value.time ).toLocaleString( ) }` );
 
         })
+
+        return ( ) => {
+            socket?.off("getServers");
+            socket?.off("joinChannel");
+            socket?.off("getMessages");
+            socket?.off("newMessage");
+            socket?.off("reminderAdded");
+        }
 
     }, [ socket, messages ])
 
@@ -121,9 +133,10 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
         author: {
             username: string;
             image: string;
-        }
+        },
+        files: string[ ]
     ) {
-        socket?.emit( "sendMessage", { serverID, channelID, message, author } );
+        socket?.emit( "sendMessage", { serverID, channelID, message, author, files } );
     }
 
     function getMessages( serverID: string, channelID: string ) {
@@ -142,6 +155,10 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
         socket?.emit( "createReminder", { serverID, channelID, author, reminder, description, time } );
     }
 
+    function getCryptoGraphs( serverID: string, channelID: string, crypto: string ) {
+        socket?.emit( "getCryptoGraphs", { serverID, channelID, crypto } );
+    }
+
     return (
         <Context.Provider value={{
             contextValue,
@@ -158,6 +175,7 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
             joinChannel,
             socket,
             createReminder,
+            getCryptoGraphs
         }}>
             { children }
         </Context.Provider>
