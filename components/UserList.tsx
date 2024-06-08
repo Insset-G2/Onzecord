@@ -1,8 +1,6 @@
 "use client"
 
 import useContextProvider from "@/hooks/useContextProvider"
-import { useEffect } from "react";
-
 export default function UserList( ) {
 
     const { contextValue } = useContextProvider( );
@@ -21,9 +19,7 @@ export default function UserList( ) {
                                 </div>
                             )
                         }
-                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse absolute right-0 bottom-0">
-
-                        </div>
+                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse absolute right-0 bottom-0" />
                     </div>
                     <div className="flex flex-col">
                         <p>{ user.username }</p>
