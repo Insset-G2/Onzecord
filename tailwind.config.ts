@@ -16,6 +16,9 @@ function flattenColorPalette(colors: any): object {
 }
 
 const config = {
+  safelist: [{
+    pattern: /hljs+/,
+  }],
   darkMode: ["class"],
   content: [
     './pages/**/*.{ts,tsx}',
@@ -25,6 +28,9 @@ const config = {
 	],
   prefix: "",
   theme: {
+    hljs: {
+      theme: 'night-owl',
+    },
     container: {
       center: true,
       padding: "2rem",
@@ -101,6 +107,7 @@ const config = {
     },
   },
   plugins: [
+    require( "tailwind-highlightjs" ),
     require( "tailwindcss-animate" ),
     addVariablesForColors,
     function ({ matchUtilities, theme }: any) {

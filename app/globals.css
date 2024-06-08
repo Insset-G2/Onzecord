@@ -74,30 +74,7 @@
     overscroll-behavior-y: none;
     @apply bg-background text-foreground;
   }
-}
-
-::-webkit-scrollbar-thumb {
-    min-height: 44px;
-    min-width: 44px;
-    border-radius: 16px;
-    border: 5px solid transparent;
-    background-clip: content-box;
-}
-
-::-webkit-scrollbar,
-::-webkit-scrollbar-track {
-    @apply bg-transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    @apply bg-gray-300;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-    @apply bg-neutral-800
-}
-
-
-::-webkit-scrollbar-button,::-webkit-scrollbar-corner {
-display: none;
+  .hljs {
+    @apply !bg-neutral-950/30;
+  }
 }

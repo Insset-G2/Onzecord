@@ -12,6 +12,14 @@ import {
     CommandShortcut,
 } from "@/components/ui/command"
 
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+  } from "@/components/ui/select"
+
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -101,16 +109,31 @@ export function CommandMenu( ) {
                     { ( pages.length < 3 ) && (
                         <CommandEmpty>No results found.</CommandEmpty>
                     )}
-                    { activePage === "home" && <Home reminder={() => setPages([...pages, "reminder"])} />}
+                    { activePage === "home" && (
+                        <Home 
+                            reminder={() => setPages([...pages, "reminder"])} 
+                            crypto={() => setPages([...pages, "crypto"])}
+                        />
+                    )}
                     { activePage === "reminder" && (
                         <Reminder
                             create={( ) => { setPages([...pages, "create"]) }}
+                        />
+                    )}
+                    { activePage === "crypto" && (
+                        <Crypto
+                            graphs={( ) => { setPages([...pages, "graphs"]) }}
                         />
                     )}
                     { activePage === "create" && (
                         <CreateReminder
                             setPages={setPages}
                             setOpen={() => setOpen(false)}
+                        />
+                    ) }
+                    { activePage === "graphs" && (
+                        <CryptoGraphs
+                            setPages={setPages}
                         />
                     ) }
 
@@ -146,10 +169,11 @@ function Item({
     )
 }
 
-function Home({ reminder }: { reminder: () => void }) {
+function Home({ reminder, crypto }: { reminder: () => void, crypto: () => void }) {
     return (
         <CommandGroup heading="Home">
             <CommandItem onSelect={ () => reminder() }>Reminder</CommandItem>
+            <CommandItem onSelect={ () => crypto() }>Crypto</CommandItem>
         </CommandGroup>
     )
 }
@@ -216,7 +240,7 @@ function CreateReminder({ setPages, setOpen }: { setPages: (pages: string[]) => 
             <Button
                 className="-ml-4"
                 variant={"link"}
-                onClick={() => setPages(["reminder"])}
+                onClick={() => setPages(["home", "reminder"])}
             >
                 <ArrowLeftIcon className="mr-2 h-4 w-4" />
                 Back
@@ -229,7 +253,7 @@ function CreateReminder({ setPages, setOpen }: { setPages: (pages: string[]) => 
                         render={({ field }) => (
                             <FormItem>
                                 <FormControl>
-                                    <Input placeholder="Title" {...field} />
+                                    <Input autoFocus placeholder="Title" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -301,5 +325,89 @@ function CreateReminder({ setPages, setOpen }: { setPages: (pages: string[]) => 
             </Form>
         </div>
 
+    )
+}
+
+function Crypto({ graphs }: { graphs: () => void }) {
+    return (
+        <CommandGroup heading="Crypto">
+            <Item>Check prices</Item>
+            <Item onSelect={ graphs }>Graphs</Item>
+            <Item>Clear graphs</Item>
+            <Item>Update graphs</Item>
+            <CommandSeparator className="my-1" />
+            <Item shortcut="Pascal">Open the crypto&apos;s GitHub</Item>
+        </CommandGroup>
+    )
+}
+
+function CryptoGraphs({ setPages }: { setPages: (pages: string[]) => void }) {
+
+    const {
+        getCryptoGraphs,
+        contextValue,
+    } = useContextProvider();
+
+    const formSchema = z.object({
+        crypto: z.string()
+    })
+
+    const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            crypto: "",
+        },
+    })
+
+    const onSubmit = (values: z.infer<typeof formSchema>) => {
+        getCryptoGraphs(
+            contextValue.selectedServer,
+            contextValue.selectedChannel,
+            values.crypto
+        )
+    }
+
+    return (
+        <div className="m-5">
+            <Button
+                className="-ml-4"
+                variant={"link"}
+                onClick={() => setPages(["home", "crypto"])}
+            >
+                <ArrowLeftIcon className="mr-2 h-4 w-4" />
+                Back
+            </Button>
+
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <FormField
+                        control={form.control}
+                        name="crypto"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Cryptocurrency</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select the cryptocurrency" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="litecoin">Litecoin</SelectItem>
+                                        <SelectItem value="bitcoin">Bitcoin</SelectItem>
+                                        <SelectItem value="ethereum">Ethereum</SelectItem>
+                                        <SelectItem value="solana">Solana</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <Button type="submit">Get graphs</Button>
+                </form>
+            </Form>
+
+            
+        </div>
     )
 }
