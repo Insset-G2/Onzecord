@@ -110,8 +110,8 @@ export function CommandMenu( ) {
                         <CommandEmpty>No results found.</CommandEmpty>
                     )}
                     { activePage === "home" && (
-                        <Home 
-                            reminder={() => setPages([...pages, "reminder"])} 
+                        <Home
+                            reminder={() => setPages([...pages, "reminder"])}
                             crypto={() => setPages([...pages, "crypto"])}
                         />
                     )}
@@ -297,21 +297,9 @@ function CreateReminder({ setPages, setOpen }: { setPages: (pages: string[]) => 
                                         <PopoverContent className="w-auto p-0">
                                             <Calendar
                                                 mode="single"
-                                                selected={date}
-                                                onSelect={setDate}
+                                                selected={field.value}
+                                                onSelect={field.onChange}
                                                 initialFocus
-                                            />
-                                            <Input
-                                                autoComplete="off"
-
-                                                className="m-4 w-56 text-neutral-100"
-                                                type="time"
-                                                {...field}
-                                            />
-                                            <Input
-                                                type="hidden"
-                                                {...field}
-                                                value={date ? date.toISOString() : ""}
                                             />
                                         </PopoverContent>
                                     </Popover>
@@ -407,7 +395,7 @@ function CryptoGraphs({ setPages }: { setPages: (pages: string[]) => void }) {
                 </form>
             </Form>
 
-            
+
         </div>
     )
 }
