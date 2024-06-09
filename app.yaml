@@ -1,7 +1,5 @@
 # [START app_yaml]
-runtime: nodejs18
-env: flex
-
+runtime: nodejs22
 # Use only a single instance, so that this local-memory-only chat app will work
 # consistently with multiple users. To work across multiple instances, an
 # extra-instance messaging system or data store would be needed.
@@ -12,8 +10,6 @@ handlers:
   - url: /.*
     secure: always
     script: auto
-
-service: default
 
 network:
   session_affinity: true
