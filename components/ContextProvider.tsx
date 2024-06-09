@@ -66,7 +66,7 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
         selectedChannel: null,
     } );
     const socket = useWebsocket(
-        process.env.production ? "https://onzecord-6u2pqz2qca-od.a.run.app" : "http://localhost:8080"
+        "https://onzecord-425916.ew.r.appspot.com"
      );
 
     useEffect(() => {
