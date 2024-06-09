@@ -113,6 +113,7 @@ export function CommandMenu( ) {
                         <Home
                             reminder={() => setPages([...pages, "reminder"])}
                             crypto={() => setPages([...pages, "crypto"])}
+                            youtube={() => setPages([...pages, "youtube"])}
                         />
                     )}
                     { activePage === "reminder" && (
@@ -122,6 +123,8 @@ export function CommandMenu( ) {
                     )}
                     { activePage === "crypto" && (
                         <Crypto
+                            setPages={setPages}
+                            setOpen={setOpen}
                             graphs={( ) => { setPages([...pages, "graphs"]) }}
                         />
                     )}
@@ -134,8 +137,19 @@ export function CommandMenu( ) {
                     { activePage === "graphs" && (
                         <CryptoGraphs
                             setPages={setPages}
+                            setOpen={() => setOpen(false)}
                         />
                     ) }
+                    { activePage === "youtube" && (
+                        <Youtube
+                            search={() => setPages([...pages, "search"])}
+                        />
+                    )}
+                    { activePage === "search" && (
+                        <SearchYoutube
+                            setPages={setPages}
+                        />
+                    )}
 
                 </CommandList>
             </Command>
@@ -169,11 +183,12 @@ function Item({
     )
 }
 
-function Home({ reminder, crypto }: { reminder: () => void, crypto: () => void }) {
+function Home({ reminder, crypto, youtube }: { reminder: () => void, crypto: () => void, youtube: () => void }) {
     return (
         <CommandGroup heading="Home">
             <CommandItem onSelect={ () => reminder() }>Reminder</CommandItem>
             <CommandItem onSelect={ () => crypto() }>Crypto</CommandItem>
+            <CommandItem onSelect={ () => youtube() }>Youtube</CommandItem>
         </CommandGroup>
     )
 }
@@ -187,7 +202,7 @@ function Reminder({ create }: { create: () => void }) {
                 <Item>Clear reminders</Item>
                 <Item>Update reminder</Item>
                 <CommandSeparator className="my-1" />
-                <Item shortcut="Pascal">Open the reminder&apos;s GitHub</Item>
+                <Item shortcut="Pascal" onSelect={() => window.open("https://github.com/Insset-G2/reminder-manager")}>Open the reminder&apos;s GitHub</Item>
             </CommandGroup>
 
         </>
@@ -210,7 +225,13 @@ function CreateReminder({ setPages, setOpen }: { setPages: (pages: string[]) => 
 
         description: z.string().max(1000, "Description must be less than 1000 characters"),
 
-        time: z.date(),
+        time: z.date({
+            required_error: "Date is required",
+        }).refine((date) => {
+            return date > new Date()
+        }).transform((date) => {
+            return new Date(date)
+        }),
     })
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -218,7 +239,6 @@ function CreateReminder({ setPages, setOpen }: { setPages: (pages: string[]) => 
         defaultValues: {
             name: "",
             description: "",
-            time: new Date(),
         },
     })
 
@@ -291,7 +311,11 @@ function CreateReminder({ setPages, setOpen }: { setPages: (pages: string[]) => 
                                                 )}
                                             >
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {date ? format(date, "PPP") : <span>Choose a date</span>}
+                                                {field.value ? (
+                                                    format(field.value, "PPP")
+                                                ) : (
+                                                    <span>Pick a date</span>
+                                                )}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0">
@@ -316,20 +340,52 @@ function CreateReminder({ setPages, setOpen }: { setPages: (pages: string[]) => 
     )
 }
 
-function Crypto({ graphs }: { graphs: () => void }) {
+function GetReminders({ setPages }: { setPages: (pages: string[]) => void }) {
+
+    return (
+        <div className="m-5">
+            <Button
+                className="-ml-4"
+                variant={"link"}
+                onClick={() => setPages(["home", "reminder"])}
+            >
+                <ArrowLeftIcon className="mr-2 h-4 w-4" />
+                Back
+            </Button>
+            <div>
+
+            </div>
+        </div>
+    )
+}
+
+function Crypto({ graphs, setPages, setOpen }: { graphs: () => void, setPages: (pages: string[]) => void, setOpen: ( open: boolean ) => void }) {
+
+    const {
+        getCryptoValues,
+        contextValue,
+    } = useContextProvider();
+
     return (
         <CommandGroup heading="Crypto">
-            <Item>Check prices</Item>
+            <Item onSelect={ () => {
+                getCryptoValues(
+                    contextValue.selectedServer,
+                    contextValue.selectedChannel
+                )
+                setPages(["home"])
+                setOpen(false)
+            } } >Check values</Item>
             <Item onSelect={ graphs }>Graphs</Item>
-            <Item>Clear graphs</Item>
-            <Item>Update graphs</Item>
             <CommandSeparator className="my-1" />
-            <Item shortcut="Pascal">Open the crypto&apos;s GitHub</Item>
+            <Item shortcut="Leo"
+                onSelect={ () => window.open("https://github.com/Insset-G2/cryptomonnaies") }
+            >Open the crypto&apos;s GitHub</Item>
         </CommandGroup>
     )
 }
 
-function CryptoGraphs({ setPages }: { setPages: (pages: string[]) => void }) {
+function CryptoGraphs({ setPages, setOpen }: { setPages: (pages: string[]) => void, setOpen: ( open: boolean ) => void }) {
 
     const {
         getCryptoGraphs,
@@ -337,7 +393,11 @@ function CryptoGraphs({ setPages }: { setPages: (pages: string[]) => void }) {
     } = useContextProvider();
 
     const formSchema = z.object({
-        crypto: z.string()
+        crypto: z.string().refine((crypto) => {
+            return ["litecoin", "bitcoin", "ethereum", "solana"].includes(crypto)
+        }, {
+            message: "Invalid cryptocurrency",
+        }),
     })
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -347,12 +407,14 @@ function CryptoGraphs({ setPages }: { setPages: (pages: string[]) => void }) {
         },
     })
 
-    const onSubmit = (values: z.infer<typeof formSchema>) => {
+    const onSubmit = (values: z.infer<typeof formSchema> ) => {
         getCryptoGraphs(
             contextValue.selectedServer,
             contextValue.selectedChannel,
             values.crypto
         )
+        setPages(["home"])
+        setOpen(false)
     }
 
     return (
@@ -376,7 +438,7 @@ function CryptoGraphs({ setPages }: { setPages: (pages: string[]) => void }) {
                                 <FormLabel>Cryptocurrency</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
-                                        <SelectTrigger>
+                                        <SelectTrigger autoFocus>
                                             <SelectValue placeholder="Select the cryptocurrency" />
                                         </SelectTrigger>
                                     </FormControl>
@@ -399,3 +461,71 @@ function CryptoGraphs({ setPages }: { setPages: (pages: string[]) => void }) {
         </div>
     )
 }
+
+function Youtube({ search }: { search: () => void }) {
+    return (
+        <CommandGroup heading="Youtube">
+            <Item shortcut="Yt" onSelect={ search }>
+                Search a video
+            </Item>
+        </CommandGroup>
+    )
+}
+
+function SearchYoutube({ setPages }: { setPages: (pages: string[]) => void }) {
+
+        const {
+            searchYoutube,
+            contextValue,
+        } = useContextProvider();
+
+        const formSchema = z.object({
+            search: z.string().min(1, "Search must be at least 1 character"),
+        })
+
+        const form = useForm<z.infer<typeof formSchema>>({
+            resolver: zodResolver(formSchema),
+            defaultValues: {
+                search: "",
+            },
+        })
+
+        const onSubmit = (values: z.infer<typeof formSchema>) => {
+            searchYoutube(
+                contextValue.selectedServer,
+                contextValue.selectedChannel,
+                values.search
+            )
+            setPages(["home"])
+        }
+
+        return (
+            <div className="m-5">
+                <Button
+                    className="-ml-4"
+                    variant={"link"}
+                    onClick={() => setPages(["home", "youtube"])}
+                >
+                    <ArrowLeftIcon className="mr-2 h-4 w-4" />
+                    Back
+                </Button>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="search"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <Input autoFocus placeholder="Search" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <Button type="submit">Search</Button>
+                    </form>
+                </Form>
+            </div>
+        )
+    }

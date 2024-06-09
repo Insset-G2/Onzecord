@@ -4,7 +4,7 @@ import useContextProvider from "@/hooks/useContextProvider"
 import { useEffect, useRef, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { FilePlus2, Paperclip, SendIcon } from "lucide-react"
+import { FilePlus2, LanguagesIcon, Paperclip, SendIcon } from "lucide-react"
 import { Message } from "@/components/ContextProvider"
 import Image from "next/image"
 import Time from "@/components/Time."
@@ -16,12 +16,21 @@ import { Textarea } from "@/components/ui/textarea"
 import { FileUploader, FileInput } from "@/components/ui/file-upload"
 import { cn } from "@/lib/utils"
 import { v4 as UUIDV4 } from "uuid"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-  } from "@/components/ui/popover"
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuRadioGroup,
+    ContextMenuRadioItem,
+    ContextMenuSeparator,
+    ContextMenuSub,
+    ContextMenuSubContent,
+    ContextMenuSubTrigger,
+    ContextMenuTrigger,
+} from "@/components/ui/context-menu"
 import FileUploadDropzone from "@/components/FileUploadDropzone"
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 
 export default function Page({
     params: { serverID, channelID }
@@ -33,7 +42,6 @@ export default function Page({
     const { contextValue,
         setContextValue,
         sendMessage,
-        user,
         messages,
         getMessages,
         joinChannel,
@@ -53,16 +61,16 @@ export default function Page({
             selectedChannel: channelID
         }))
     }, [ serverID, channelID, setContextValue ])
-    
+
     useEffect(() => {
-        console.log( messages )
         if( ref.current )
             ref.current.scrollTop = ref.current.scrollHeight
     }, [ messages ])
 
     return (
         <>
-            <div ref={ ref } className="flex-1 overflow-y-auto p-12 space-y-5 max-h-[-webkit-fill-available]">
+
+            <div ref={ref} className="flex-1 p-12 overflow-y-auto flex flex-col space-y-6 max-h-[-webkit-fill-available]">
                 { messages.map((message: Message, index: number) => (
                     <DisplayMessage key={ index } message={ message } />
                 )) }
@@ -92,10 +100,10 @@ function SendMessage( {
         username: string;
         image: string;
     },
-    data: ( 
-        server: string, 
-        channel: string, 
-        message: string, 
+    data: (
+        server: string,
+        channel: string,
+        message: string,
         author: {
             id: string;
             username: string;
@@ -107,13 +115,16 @@ function SendMessage( {
 
     const ref = useRef<HTMLTextAreaElement>( null );
     return (
-
         <div className="flex items-center px-20 py-5 gap-2">
             <CommandMenu />
             <div className="relative flex-1">
                 <FileUploadDropzone
                     placeholder=""
                     onSubmit={ ( e ) => {
+
+                        if( !e.message && !e.files?.length )
+                            return
+
                         if ( e.files && e.files.length > 0 ) {
 
                             const promises = Promise.all(
@@ -140,8 +151,8 @@ function SendMessage( {
                         } else {
                             data( serverID, channelID, e.message, author, [ ] )
                         }
-                        
-                    }} 
+
+                    }}
                 />
 
             </div>
@@ -153,92 +164,208 @@ function DisplayMessage(
     { message }:
     { message: Message }
 ) {
-    return (
-        <div className="flex space-x-4 group">
-            <div className="w-10 h-10 bg-neutral-800 rounded-full relative">
-                <img
-                    src={ message.author.image }
-                    alt={ message.author.username }
-                    className="w-10 h-10 rounded-full min-w-10 min-h-10"
-                />
-            </div>
-            <div className="flex flex-col">
-                <p className="flex items-baseline">
-                    { message.author.username }
-                    <small className="group/time opacity-75 text-neutral-500 group/time-hover:!opacity-100 ml-2 flex">
-                        <div className="block group/time-hover:hidden">
-                            <Time date={new Date(message.timestamp)} />
-                        </div>
-                        <div className="hidden group/time-hover:!block">
-                            ({ new Date(message.timestamp).toLocaleString() })
-                        </div>
-                    </small>
-                </p>
+    const [ translation, setTranslation ] = useState( "original" );
+    const [ messageState, setMessageState ] = useState( message );
 
-                <p className="
-                    text-neutral-300/90 whitespace-pre-wrap
-                    [&>pre]:bg-neutral-950/20 [&>pre]:mt-2 [&>pre]:rounded-md [&>pre]:border [&>pre]:border-neutral-800 [&>pre]:overflow-x-auto [&>pre]:text-sm
-                    [&>h1]:text-xl [&>h2]:text-lg [&>h3]:text-base [&>h4]:text-sm [&>h5]:text-xs [&>h6]:text-xs
-                    [&>a]:text-blue-500 [&>a]:hover:text-blue-400 [&>a]:underline [&>a]:hover:no-underline
-                    [&>ul]:list-disc [&>ol]:list-decimal [&>li]:ml-4 [&>li]:mt-2 [&>li]:mb-2
-                    [&>blockquote]:border-l-4 [&>blockquote]:border-neutral-500 [&>blockquote]:pl-4 [&>blockquote]:mx-1
-                ">
-                    <Markdown rehypePlugins={[rehypeHighlight]}>{ message.message }</Markdown>
-                </p>
-                <div className="flex gap-1">
-                    <div>
-                        { message.files[0] && (
-                            <div
-                                className="relative rounded-sm"
-                                style={{ 
-                                    width: "300px", 
-                                    height: "300px", 
-                                    background: `url(/upload/${ message.files[0] })`,
-                                    backgroundSize: "cover",
-                                    backgroundPosition: "center"
-                                }}
-                            />
-                        )}
+    return (
+
+        <ContextMenu>
+            <ContextMenuTrigger>
+                <div className="flex space-x-4 group w-full">
+                    <div className="w-10 h-10 bg-neutral-800 rounded-full relative">
+                        <img
+                            src={message.author.image}
+                            alt={message.author.username}
+                            className="w-10 h-10 rounded-full min-w-10 min-h-10"
+                        />
                     </div>
-                    <div className="flex flex-col gap-1">
-                        { message.files[1] && (
-                            <div
-                                className="relative rounded-sm"
-                                style={{ 
-                                    width: `calc( ${ message.files.length > 2 ? "296px" : "300px" } / ${ message.files.length > 2 ? 2 : 1 })`,
-                                    height: `calc( ${ message.files.length > 2 ? "296px" : "300px" } / ${ message.files.length > 2 ? 2 : 1 })`,
-                                    background: `url(/upload/${ message.files[1] })`,
-                                    backgroundSize: "cover",
-                                    backgroundPosition: "center"
-                                }}
-                            />
-                        )}
-                        { message.files[2] && (
-                            <div
-                                className="relative rounded-sm"
-                                style={{ 
-                                    width: `calc( 296px / 2)`,
-                                    height: `calc( 296px / 2)`,
-                                    background: `url(/upload/${ message.files[2] })`,
-                                    backgroundSize: "cover",
-                                    backgroundPosition: "center"
-                                }}
-                            />
-                        )}
+                    <div className="flex flex-col w-full">
+                        <p className="flex items-baseline">
+                            {message.author.username}
+                            <small className="group/time opacity-75 text-neutral-500 group/time-hover:!opacity-100 ml-2 flex">
+                                <div className="block group/time-hover:hidden">
+                                    <Time date={new Date(message.timestamp)} />
+                                </div>
+                                <div className="hidden group/time-hover:!block">
+                                    ({new Date(message.timestamp).toLocaleString()})
+                                </div>
+                            </small>
+                        </p>
+
+                        <p className="
+                            text-neutral-300/90 whitespace-pre-wrap
+                            [&>pre]:bg-neutral-950/20 [&>pre]:mt-2 [&>pre]:rounded-md [&>pre]:border [&>pre]:border-neutral-800 [&>pre]:overflow-x-auto [&>pre]:text-sm
+                            [&>h1]:text-xl [&>h2]:text-lg [&>h3]:text-base [&>h4]:text-sm [&>h5]:text-xs [&>h6]:text-xs
+                            [&>a]:text-blue-500 [&>a]:hover:text-blue-400 [&>a]:underline [&>a]:hover:no-underline
+                            [&>ul]:list-disc [&>ol]:list-decimal [&>li]:ml-4 [&>li]:mt-2 [&>li]:mb-2
+                            [&>ul]:flex [&>ul]:flex-col [&>ul]:gap-2 [&>ol]:flex [&>ol]:flex-col [&>ol]:gap-2
+                            [&>blockquote]:border-l-4 [&>blockquote]:border-neutral-500 [&>blockquote]:pl-4 [&>blockquote]:mx-1
+                        ">
+                            {messageState.translated && messageState.translated === "[Translating]" ? (
+                                <SkeletonText text={ message.message } />
+                            ) : (
+                                <Markdown rehypePlugins={[rehypeHighlight]}>{
+                                    messageState.translated ? messageState.translated : message.message
+                                }</Markdown>
+                            )}
+                        </p>
+                        <div className="flex gap-1">
+                            <div>
+                                {message.files[0] && (
+                                    <Dialog>
+                                        <DialogTrigger
+                                            className="m-0"
+                                            asChild
+                                        >
+                                            <div
+                                                className="relative rounded-sm"
+                                                style={{
+                                                    width: "300px",
+                                                    height: "300px",
+                                                    background: `url(/upload/${message.files[0]})`,
+                                                    backgroundSize: "cover",
+                                                    backgroundPosition: "center"
+                                                }}
+                                            />
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <img
+                                                src={`/upload/${message.files[0]}`}
+                                                alt={message.files[0]}
+                                                className="rounded-md"
+                                            />
+                                        </DialogContent>
+                                    </Dialog>
+                                )}
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                {message.files[1] && (
+                                    <Dialog>
+                                        <DialogTrigger
+                                            className="m-0"
+                                            asChild
+                                        >
+                                            <div
+                                                className="relative rounded-sm"
+                                                style={{
+                                                    width: `calc( ${message.files.length > 2 ? "296px" : "300px"} / ${message.files.length > 2 ? 2 : 1})`,
+                                                    height: `calc( ${message.files.length > 2 ? "296px" : "300px"} / ${message.files.length > 2 ? 2 : 1})`,
+                                                    background: `url(/upload/${message.files[1]})`,
+                                                    backgroundSize: "cover",
+                                                    backgroundPosition: "center"
+                                                }}
+                                            />
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <img
+                                                src={`/upload/${message.files[1]}`}
+                                                alt={message.files[1]}
+                                                className="rounded-md w-full"
+                                            />
+                                        </DialogContent>
+                                    </Dialog>
+                                )}
+                                {message.files[2] && (
+                                    <Dialog>
+                                        <DialogTrigger
+                                            className="m-0"
+                                            asChild
+                                        >
+                                            <div
+                                                className="relative rounded-sm"
+                                                style={{
+                                                    width: `calc( 296px / 2)`,
+                                                    height: `calc( 296px / 2)`,
+                                                    background: `url(/upload/${message.files[2]})`,
+                                                    backgroundSize: "cover",
+                                                    backgroundPosition: "center"
+                                                }}
+                                            />
+                                        </DialogTrigger>
+                                        <DialogContent className="w-fit m-0">
+                                            <img
+                                                src={`/upload/${message.files[2]}`}
+                                                alt={message.files[2]}
+                                                className="rounded-md"
+                                            />
+                                        </DialogContent>
+                                    </Dialog>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div>
-                    <Popover>
-                        <PopoverTrigger
-                            className="bg-neutral-800 border border-neutral-700 rounded-sm"
-                        >
-                            Open
-                        </PopoverTrigger>
-                        <PopoverContent>Place content for the popover here.</PopoverContent>
-                    </Popover>
-                </div>
-            </div>
-        </div>
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+                <ContextMenuSub>
+                    <ContextMenuSubTrigger>
+                        Translate
+                    </ContextMenuSubTrigger>
+                    <ContextMenuSubContent>
+                        <ContextMenuRadioGroup value={translation} onValueChange={(value) => {
+                            setTranslation(value)
+                            applyTranslation(value, messageState, setMessageState)
+                        }}>
+                            <ContextMenuRadioItem value="fr">French</ContextMenuRadioItem>
+                            <ContextMenuRadioItem value="de">German</ContextMenuRadioItem>
+                            <ContextMenuRadioItem value="en">English</ContextMenuRadioItem>
+                            <ContextMenuSeparator />
+                            <ContextMenuRadioItem value="original">Original</ContextMenuRadioItem>
+                        </ContextMenuRadioGroup>
+                    </ContextMenuSubContent>
+                </ContextMenuSub>
+            </ContextMenuContent>
+        </ContextMenu>
+
+
     )
 
+}
+
+function applyTranslation( value: string, message: Message, setMessage: ( message: Message ) => void ) {
+    setMessage({
+        ...message,
+        translated: "[Translating]"
+    })
+    fetch( process.env.NEXT_PUBLIC_TRANSACTIONS_URL as string, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            "text": message.message,
+            "from": "fr",
+            "to": value
+        })
+    })
+    .then( response => response.json() )
+    .then( data => {
+        setMessage({
+            ...message,
+            translated: data.translation
+        })
+    })
+    .catch( error => {
+        console.error( error )
+    })
+
+}
+
+function SkeletonText( { text }: { text: string } ) {
+
+    return (
+        <div className="flex flex-col gap-2">
+            {text.split("\n").map((line, index) => {
+                const length = line.length
+                return (
+                    <div key={index} className="flex gap-2">
+                        <Skeleton style={{
+                            width: `${length * 2 }px`,
+                            height: "1rem"
+                        }} />
+                    </div>
+                )
+            })}
+        </div>
+    )
 }

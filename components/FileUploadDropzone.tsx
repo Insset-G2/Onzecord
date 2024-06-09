@@ -132,7 +132,7 @@ const FileUploadDropzone = ({
               <FormItem className="p-0 w-full overflow-hidden relative">
                 <Textarea
                   {...field}
-                  className={`border focus-visible:ring-0 border-none w-full !min-h-9 h-9`}
+                  className={`border focus-visible:ring-0 border-none w-full min-h-[40px] max-h-96`}
                   placeholder={placeholder}
                   onFocus={ () => setShowPlaceholder( false ) }
                   onBlur={ () => setShowPlaceholder( true ) }

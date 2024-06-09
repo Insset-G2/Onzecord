@@ -1,7 +1,5 @@
 "use client"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -10,23 +8,20 @@ import {
   } from "@/components/ui/dropdown-menu"
 
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
 
 import {
     Breadcrumb,
     BreadcrumbItem,
     BreadcrumbLink,
     BreadcrumbList,
-    BreadcrumbPage,
     BreadcrumbSeparator
   } from "@/components/ui/breadcrumb"
 
@@ -36,15 +31,47 @@ import useContextProvider from "@/hooks/useContextProvider"
 import Link from "next/link"
 import { Button } from "./ui/button"
 import { UserIcon } from "lucide-react"
-import { useEffect } from "react"
+import { Input } from "./ui/input"
+import { Textarea } from "./ui/textarea"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form"
+
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+
+import { useState } from "react"
+import { useRouter } from 'next/navigation'
 
 export default function Navbar( ) {
 
     const {
-        setContextValue,
+        updateUser,
         contextValue,
-        user
     } = useContextProvider( );
+
+    const [isOpen, setIsOpen] = useState(false);
+
+    const formSchema = z.object({
+        username: z.string().min(2, {
+            message: "Username must be at least 2 characters.",
+        }),
+        description: z.string().max(30, {
+            message: "Description must be less than 30 characters.",
+        }),
+    })
+
+    const form = useForm( {
+        resolver: zodResolver( formSchema ),
+        defaultValues: {
+            username: contextValue.user.username,
+            description: contextValue.user.description,
+        },
+    } );
+
+    const onSubmit = ( data: any ) => {
+        updateUser( data );
+        setIsOpen( false );
+    }
 
     return (
         <div className="w-full border-b border-neutral-600/40 bg-neutral-900/95 backdrop-blur supports-[backdrop-filter]:bg-neutral-900/30">
@@ -103,7 +130,6 @@ export default function Navbar( ) {
                                                 "Select a channel"
                                             )}
                                             <ChevronDownIcon />
-                                        <ChevronDownIcon />
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="start">
                                             {
@@ -132,28 +158,66 @@ export default function Navbar( ) {
                     </BreadcrumbList>
                 </Breadcrumb>
 
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant={ "outline" } className="bg-neutral-900/50">
-                            <UserIcon className="mr-2 h-4 w-4" />
-                            { contextValue.user.username }
-                        </Button>
-                    </AlertDialogTrigger>
+                <Dialog open={isOpen} onOpenChange={setIsOpen}>
 
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete your account
-                            and remove your data from our servers.
-                        </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction>Continue</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" className="bg-transparent">
+                            <UserIcon className="mr-2 h-4 w-4" />
+                            {contextValue.user.username}
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                            <DialogTitle>Edit profile</DialogTitle>
+                            <DialogDescription>
+                                Make changes to your profile here. Click save when you&apos;re done.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                                <FormField
+                                    name="username"
+                                    control={form.control}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Username</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    {...field}
+                                                    placeholder="Username"
+                                                    className="w-full"
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    name="description"
+                                    control={form.control}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Description</FormLabel>
+                                            <FormControl>
+                                                <Textarea
+                                                    {...field}
+                                                    placeholder="Description"
+                                                    className="w-full"
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <DialogFooter>
+                                    <Button type="submit">Save changes</Button>
+                                </DialogFooter>
+                            </form>
+                        </Form>
+
+                    </DialogContent>
+                </Dialog>
+
             </div>
         </div>
     )

@@ -31,7 +31,10 @@ export const Context = createContext({
     }, files: [ ] ) => { },
     getMessages: ( serverID: string, channelID: string ) => { },
     createReminder: ( serverID: string, channelID: string, author: string, reminder: string, description: string, time: string ) => { },
-    getCryptoGraphs: ( serverID: string, channelID: string, crypto: string ) => { }
+    getReminder: ( serverID: string, channelID: string ) => { },
+    getCryptoGraphs: ( serverID: string, channelID: string, crypto: string ) => { },
+    getCryptoValues: ( serverID: string, channelID: string ) => { },
+    updateUser: ({ username, description }: { username: string, description: string }) => { }
 });
 
 
@@ -44,6 +47,7 @@ export interface Message {
     }
     message: string;
     timestamp: string;
+    translated: string | null;
     files: string[ ];
 }
 
@@ -99,7 +103,7 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
             setMessages(value.messages);
         })
 
-        socket?.on("newMessage", (value: { content: Message }) => {
+        socket?.on( "newMessage", (value: { content: Message }) => {
             setMessages([
                 ...messages,
                 value.content
@@ -159,6 +163,27 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
         socket?.emit( "getCryptoGraphs", { serverID, channelID, crypto } );
     }
 
+    function getCryptoValues( serverID: string, channelID: string ) {
+        socket?.emit( "getCryptoValues", { serverID, channelID } );
+    }
+
+    function getReminder( serverID: string, channelID: string ) {
+        socket?.emit( "getReminder", { serverID, channelID } );
+    }
+
+    function updateUser({ username, description }: { username: string, description: string }) {
+        socket?.emit("updateUser", { username, description });
+        setContextValue({
+            ...contextValue,
+            user: {
+                ...contextValue.user,
+                image: `https://avatar.vercel.sh/${username}.png`,
+                username: username,
+                description: description
+            }
+        })
+    }
+
     return (
         <Context.Provider value={{
             contextValue,
@@ -175,7 +200,10 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
             joinChannel,
             socket,
             createReminder,
-            getCryptoGraphs
+            getReminder,
+            getCryptoGraphs,
+            getCryptoValues,
+            updateUser
         }}>
             { children }
         </Context.Provider>

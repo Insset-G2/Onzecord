@@ -1,9 +1,14 @@
 "use client"
 
 import useContextProvider from "@/hooks/useContextProvider"
+import { useEffect } from "react";
 export default function UserList( ) {
 
     const { contextValue } = useContextProvider( );
+
+    useEffect(() => {
+        console.log( contextValue.users );
+    }, [ contextValue.users ])
 
     return (
         <div className="flex flex-col space-y-4 p-4">

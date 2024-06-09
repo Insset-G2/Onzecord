@@ -9,7 +9,9 @@ export default function Servers( ) {
 
             <h1 className="text-2xl font-bold">Community Servers</h1>
             <p className="text-neutral-500">Join a server to chat with other users.</p>
-            
+            <p className="text-neutral-500 mt-5">
+                It&apos;s just an example, you can&apos;t actually join any server :), please just select one on the navigation bar.
+            </p>
             <div className="grid grid-cols-4 gap-4 w-full mt-20">
                 { Array.from( { length: 8 } ).map( ( _, i ) => (
                     <Card key={ i } className="bg-neutral-900/70">
@@ -18,10 +20,10 @@ export default function Servers( ) {
                             <CardDescription>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <button className="btn btn-primary">Join</button>                            
+                            <button className="btn btn-primary">Join</button>
                         </CardContent>
                         <CardFooter className="flex justify-between">
-                            
+
                         </CardFooter>
                     </Card>
                 ))}
