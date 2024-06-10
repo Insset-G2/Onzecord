@@ -202,6 +202,7 @@ app.prepare().then(() => {
         .then(resp => resp.json())
         .then(resp => {
 
+            console.log( resp )
 
           socket.emit("reminderAdded", {
             reminder,
@@ -221,6 +222,9 @@ app.prepare().then(() => {
           });
         })
         .catch(err => {
+
+            console.error( err )
+
           socket.emit("reminderAdded", {
             reminder,
             description,
@@ -386,9 +390,43 @@ app.prepare().then(() => {
             });
         });
 
+        socket.on( "searchYoutube", ({
+            serverID,
+            channelID,
+            query
+        }) => {
+
+            fetch( `${ process.env.NEXT_PUBLIC_YOUTUBE_URL }/search?query=${ query }` )
+                .then( resp => resp.json() )
+                .then( resp => {
+
+                    addMessage({
+                        serverID,
+                        channelID,
+                        author: {
+                            username: "Youtube",
+                            image: "https://cdn.discordapp.com/attachments/1181959975455694878/1248572504348557394/g4.png?ex=66642742&is=6662d5c2&hm=f5efea630ab597a5d4d33513980947fa2990d767f9e150003282794f762b8d3f&"
+                        },
+                        message: `Here are the videos for the query ${ query } : \n ${ resp?.youtube_results?.map( r => `- [${ r.title }](${ r.url })` ).join( ",\n" ) }\nClick on the title to watch the videos`,
+                    });
+
+                })
+                .catch(err => {
+                    console.error(err);
+                    addMessage({
+                        serverID,
+                        channelID,
+                        author: {
+                            username: "Youtube",
+                            image: "https://cdn.discordapp.com/attachments/1181959975455694878/1248572504348557394/g4.png?ex=66642742&is=6662d5c2&hm=f5efea630ab597a5d4d33513980947fa2990d767f9e150003282794f762b8d3f&"
+                        },
+                        message: `Failed to get the videos for ${ query }`,
+                    });
+                });
+
+        });
+
     });
-
-
 
   httpServer
     .once("error", (err) => {
