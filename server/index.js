@@ -17,8 +17,8 @@ const handler = app.getRequestHandler();
 /* At this moment, we don't have data persistence, so we will store the messages in memory,
    yes, i"m aware that this is not a good idea... */
 
-const messages = {},
-  users = {}
+const messages = {}
+    , users    = {}
 
 app.prepare().then(() => {
 
@@ -182,26 +182,25 @@ app.prepare().then(() => {
       author,
       reminder,
       description,
-      time
+      time,
+      email
     }) => {
 
-      fetch(`${ process.env.REMINDER_URL }/reminder/create`, {
+      fetch(`${ process.env.NEXT_PUBLIC_REMINDER_URL }/reminder/create`, {
           method: "POST",
           headers: {
-
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
             title: reminder,
             trigger_time: time,
-            description
+            description,
+            email
           })
 
         })
         .then(resp => resp.json())
         .then(resp => {
-
-            console.log( resp )
 
           socket.emit("reminderAdded", {
             reminder,
@@ -213,10 +212,10 @@ app.prepare().then(() => {
           addMessage({
             serverID,
             channelID,
-            message: `${ author } created a reminder: ${ reminder } at ${ new Date( time ).toLocaleString() }`,
+            message: `**${ author }** created a reminder **${ reminder }** for **${ new Date( time ).toLocaleString() }**\n\n**Description:**\n${ description }\n\n${ email ? `A reminder email will be sent to **${ email }**` : "" }\n\n**ID:** \`${ resp.reminder.id }\``,
             author: {
               username: "Reminder",
-              image: "https://cdn.discordapp.com/attachments/1181959975455694878/1248572504348557394/g4.png?ex=66642742&is=6662d5c2&hm=f5efea630ab597a5d4d33513980947fa2990d767f9e150003282794f762b8d3f&"
+              image: "/bot.png"
             }
           });
         })
@@ -237,7 +236,7 @@ app.prepare().then(() => {
             message: `${ author } tried to create a reminder: ${ reminder } at ${ new Date( time ).toLocaleString() } but failed`,
             author: {
               username: "Reminder",
-              image: "https://cdn.discordapp.com/attachments/1181959975455694878/1248572504348557394/g4.png?ex=66642742&is=6662d5c2&hm=f5efea630ab597a5d4d33513980947fa2990d767f9e150003282794f762b8d3f&"
+              image: "/bot.png"
             }
           });
         });
@@ -248,26 +247,115 @@ app.prepare().then(() => {
         channelID
     }) => {
 
-        fetch(`${ process.env.REMINDER_URL }/reminder`)
-            .then(resp => resp.json())
-            .then(resp => {
+      fetch(`${ process.env.NEXT_PUBLIC_REMINDER_URL }/reminders/list`)
+          .then(resp => resp.json())
+          .then(resp => {
 
-                addMessage({
-                    serverID,
-                    channelID,
-                    message: `Here are the reminders: \n ${ resp.map( r => r.title ).join(", ") }`,
-                    author: {
-                        username: "Reminder",
-                        image: "https://cdn.discordapp.com/attachments/1181959975455694878/1248572504348557394/g4.png?ex=66642742&is=6662d5c2&hm=f5efea630ab597a5d4d33513980947fa2990d767f9e150003282794f762b8d3f&"
-                    }
-                });
-            })
-            .catch(err => {
-                console.error(err);
-            });
+              addMessage({
+                  serverID,
+                  channelID,
+                  message: resp.length === 0 ? "There are no reminders" : `Here are the reminders:\n${ resp.map( ( r, i )  => `${ i + 1 }. **${ r.title }** at **${ new Date( r.trigger_time ).toLocaleString() }**` ).join(",\n") }`,
+                  author: {
+                      username: "Reminder",
+                      image: "/bot.png"
+                  }
+              });
+          })
+          .catch(err => {
+              console.error(err);
+          });
 
     });
 
+    socket.on("deleteReminder", ({
+      serverID,
+      channelID,
+      reminder
+    }) => {
+
+      fetch(`${ process.env.NEXT_PUBLIC_REMINDER_URL }/reminder/delete/${ reminder }`, {
+          method: "DELETE"
+        })
+        .then(resp => resp.json())
+        .then(resp => {
+
+          addMessage({
+            serverID,
+            channelID,
+            message: `Reminder **${ reminder }** has been deleted`,
+            author: {
+              username: "Reminder",
+              image: "/bot.png"
+            }
+          });
+
+        })
+        .catch(err => {
+          console.error(err);
+          addMessage({
+            serverID,
+            channelID,
+            message: `Failed to delete the reminder **${ reminder }**`,
+            author: {
+              username: "Reminder",
+              image: "/bot.png"
+            }
+          });
+        });
+
+    });
+
+    socket.on("updateReminder", ({
+      serverID,
+      channelID,
+      author,
+      reminder,
+      title,
+      description,
+      time,
+      email
+    }) => {
+      console.log( reminder )
+      fetch(`${ process.env.NEXT_PUBLIC_REMINDER_URL }/reminder/update/${ reminder }`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            title,
+            description,
+            trigger_time: time,
+            email
+          })
+        })
+        .then(resp => resp.json())
+        .then(resp => {
+
+          addMessage({
+            serverID,
+            channelID,
+            message: `Reminder **${ title }** has been updated,\n\n**Description:**\n${ description }\n\n**Time:** ${ new Date( time ).toLocaleString() }\n\n**ID:** \`${ reminder }\``,
+            author: {
+              username: "Reminder",
+              image: "/bot.png"
+            }
+          });
+
+        })
+        .catch(err => {
+          console.error(err);
+          addMessage({
+            serverID,
+            channelID,
+            message: `Failed to update the reminder **${ reminder }**`,
+            author: {
+              username: "Reminder",
+              image: "/bot.png"
+            }
+          });
+        });
+
+    });
 
     socket.on("getCryptoGraphs", async ({
       serverID,
@@ -275,67 +363,44 @@ app.prepare().then(() => {
       crypto
     }) => {
 
-        if ( fs.existsSync( `./public/upload/${ crypto }.png` ) ) {
 
-            const stats = fs.statSync( `./public/upload/${ crypto }.png` );
-            const now = new Date();
-            const diff = now - stats.mtime;
-            if ( diff > 1000 * 60 * 30 ) {
-                return await fetchCryptoGraph( crypto )
-                    .then( () => {
-                        addMessage({
-                            serverID,
-                            channelID,
-                            author: {
-                                username: "Crypto",
-                                image: "https://cdn.discordapp.com/attachments/1181959975455694878/1248572504348557394/g4.png?ex=66642742&is=6662d5c2&hm=f5efea630ab597a5d4d33513980947fa2990d767f9e150003282794f762b8d3f&"
-                            },
-                            message: `Here is the graph for ${ crypto }`,
-                            files: [ `/${ crypto }.png` ],
-                        })
-                    })
-                    .catch( err => {
-                        addMessage({
-                            serverID,
-                            channelID,
-                            author: {
-                                username: "Crypto",
-                                image: "https://cdn.discordapp.com/attachments/1181959975455694878/1248572504348557394/g4.png?ex=66642742&is=6662d5c2&hm=f5efea630ab597a5d4d33513980947fa2990d767f9e150003282794f762b8d3f&"
-                            },
-                            message: `Failed to get the graph for ${ crypto }`,
-                        });
-                    })
-            }
+      await fetch(`${process.env.NEXT_PUBLIC_CRYPTO_URL}/graph/${crypto}`)
+        .then(resp => resp.text())
+        .then(text => {
+          const src    = text.match(/src="(.+?)"/)[1],
+                base64 = src.split(",")[1];
 
-        }
+          if (!fs.existsSync("./public/upload"))
+            fs.mkdirSync("./public/upload");
 
-        await fetchCryptoGraph( crypto )
-            .then( () => {
-                addMessage({
-                    serverID,
-                    channelID,
-                    author: {
-                        username: "Crypto",
-                        image: "https://cdn.discordapp.com/attachments/1181959975455694878/1248572504348557394/g4.png?ex=66642742&is=6662d5c2&hm=f5efea630ab597a5d4d33513980947fa2990d767f9e150003282794f762b8d3f&"
-                    },
-                    message: `Here is the graph for ${ crypto }`,
-                    files: [ `/${ crypto }.png` ],
-                })
-            })
-            .catch( err => {
-                addMessage({
-                    serverID,
-                    channelID,
-                    author: {
-                        username: "Crypto",
-                        image: "https://cdn.discordapp.com/attachments/1181959975455694878/1248572504348557394/g4.png?ex=66642742&is=6662d5c2&hm=f5efea630ab597a5d4d33513980947fa2990d767f9e150003282794f762b8d3f&"
-                    },
-                    message: `Failed to get the graph for ${ crypto }`,
-                });
-            });
+          fs.writeFileSync(`./public/upload/${crypto}.png`, base64, "base64");
 
+          addMessage({
+            serverID,
+            channelID,
+            author: {
+              username: "Crypto",
+              image: "/bot.png"
+            },
+            message: `Here is the graph for ${crypto}`,
+            files: [`${crypto}.png`],
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          addMessage({
+            serverID,
+            channelID,
+            author: {
+              username: "Crypto",
+              image: "/bot.png"
+            },
+            message: `Failed to get the graph for ${crypto}`,
+          });
 
-    });
+        })
+
+      });
 
     socket.on( "getCryptoValues", ({
         serverID,
@@ -351,9 +416,9 @@ app.prepare().then(() => {
                     channelID,
                     author: {
                         username: "Crypto",
-                        image: "https://cdn.discordapp.com/attachments/1181959975455694878/1248572504348557394/g4.png?ex=66642742&is=6662d5c2&hm=f5efea630ab597a5d4d33513980947fa2990d767f9e150003282794f762b8d3f&"
+                        image: "/bot.png"
                     },
-                    message: `Here are the values for the cryptos : \n ${ Object.entries( resp ).map( ([ key, value ]) => `- ${ key.charAt(0).toUpperCase() + key.slice(1) }: ${ value }` ).join( ",\n" ) }`,
+                    message: `Here are the values for the cryptos ( euro € ) : \n ${ Object.entries( resp ).map( ([ key, value ]) => `- ${ key.charAt(0).toUpperCase() + key.slice(1) }: ${ value }€` ).join( "\n" ) }`,
                 });
             })
             .catch(err => {
@@ -363,7 +428,7 @@ app.prepare().then(() => {
                     channelID,
                     author: {
                         username: "Crypto",
-                        image: "https://cdn.discordapp.com/attachments/1181959975455694878/1248572504348557394/g4.png?ex=66642742&is=6662d5c2&hm=f5efea630ab597a5d4d33513980947fa2990d767f9e150003282794f762b8d3f&"
+                        image: "/bot.png"
                     },
                     message: `Failed to get the values for ${ crypto }`,
                 });
@@ -383,7 +448,6 @@ app.prepare().then(() => {
                 username,
                 description
             };
-            console.log( "ok ?")
             io.emit("joinChannel", {
                 users: Object.values(users).map(u => u.user)
             });
@@ -404,9 +468,9 @@ app.prepare().then(() => {
                         channelID,
                         author: {
                             username: "Youtube",
-                            image: "https://cdn.discordapp.com/attachments/1181959975455694878/1248572504348557394/g4.png?ex=66642742&is=6662d5c2&hm=f5efea630ab597a5d4d33513980947fa2990d767f9e150003282794f762b8d3f&"
+                            image: "/bot.png"
                         },
-                        message: `Here are the videos for the query ${ query } : \n ${ resp?.youtube_results?.map( r => `- [${ r.title }](${ r.url })` ).join( ",\n" ) }\nClick on the title to watch the videos`,
+                        message: `Here are the videos for the query ${ query } : \n ${ resp?.youtube_results?.map( ( r, i ) => `${ i + 1 }. [${ r.title }](${ r.url })` ).join( ",\n" ) }\n\n**Click on the title to watch the videos**`,
                     });
 
                 })
@@ -417,16 +481,15 @@ app.prepare().then(() => {
                         channelID,
                         author: {
                             username: "Youtube",
-                            image: "https://cdn.discordapp.com/attachments/1181959975455694878/1248572504348557394/g4.png?ex=66642742&is=6662d5c2&hm=f5efea630ab597a5d4d33513980947fa2990d767f9e150003282794f762b8d3f&"
+                            image: "/bot.png"
                         },
-                        message: `Failed to get the videos for ${ query }`,
+                        message: `Failed to get the videos for \`${ query }\``,
                     });
                 });
 
         });
 
     });
-
   httpServer
     .once("error", (err) => {
       console.error(err);
@@ -436,20 +499,3 @@ app.prepare().then(() => {
       console.log(`> Ready on http://${ hostname }:${ port }`);
     });
 });
-
-
-async function fetchCryptoGraph( crypto ) {
-
-    return fetch( `${ process.env.NEXT_PUBLIC_CRYPTO_URL }/graph/${ crypto }` )
-        .then( resp => resp.text() )
-        .then( text => {
-            const src    = text.match( /src="(.+?)"/ )[ 1 ]
-                , base64 = src.split( "," )[ 1 ];
-
-            fs.writeFileSync( `./public/upload/${ crypto }.png`, base64, "base64" );
-        })
-        .catch( err => {
-            return err;
-        });
-
-}

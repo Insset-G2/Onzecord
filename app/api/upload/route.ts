@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import {  NextApiResponse } from "next";
+import {  NextApiRequest, NextApiResponse } from "next";
 import path from "path";
 import { writeFile } from "fs/promises";
-import { existsSync, mkdirSync } from "fs";
-
+import { existsSync, mkdirSync, createReadStream } from "fs";
 export async function POST( req: NextRequest, res: NextApiResponse ) {
 
     const formData = await req.formData();
@@ -37,3 +36,8 @@ export async function POST( req: NextRequest, res: NextApiResponse ) {
     }
 
 };
+
+export async function GET( req: NextRequest, res: NextApiResponse ) {
+  return NextResponse.json({ Message: "GET request not supported", status: 405 });
+}
+

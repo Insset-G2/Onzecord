@@ -23,7 +23,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { format } from "date-fns"
+import { format, set } from "date-fns"
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Input } from "./ui/input";
@@ -119,6 +119,8 @@ export function CommandMenu( ) {
                     { activePage === "reminder" && (
                         <Reminder
                             create={( ) => { setPages([...pages, "create"]) }}
+                            remove={( ) => { setPages([...pages, "delete"]) }}
+                            update={( ) => { setPages([...pages, "update"]) }}
                         />
                     )}
                     { activePage === "crypto" && (
@@ -130,6 +132,18 @@ export function CommandMenu( ) {
                     )}
                     { activePage === "create" && (
                         <CreateReminder
+                            setPages={setPages}
+                            setOpen={() => setOpen(false)}
+                        />
+                    ) }
+                    { activePage === "delete" && (
+                        <DeleteReminder
+                            setPages={setPages}
+                            setOpen={() => setOpen(false)}
+                        />
+                    ) }
+                    { activePage === "update" && (
+                        <UpdateReminder
                             setPages={setPages}
                             setOpen={() => setOpen(false)}
                         />
@@ -148,6 +162,7 @@ export function CommandMenu( ) {
                     { activePage === "search" && (
                         <SearchYoutube
                             setPages={setPages}
+                            setOpen={() => setOpen(false)}
                         />
                     )}
 
@@ -193,14 +208,22 @@ function Home({ reminder, crypto, youtube }: { reminder: () => void, crypto: () 
     )
 }
 
-function Reminder({ create }: { create: () => void }) {
+function Reminder({ create, remove, update }: { create: () => void, remove: () => void, update: () => void }) {
+
+    const {
+        getReminder,
+        contextValue,
+    } = useContextProvider();
+
     return (
         <>
             <CommandGroup heading="Reminder">
-                <Item>Check reminders</Item>
+                <Item onSelect={ ( ) => {
+                    getReminder( contextValue.selectedServer, contextValue.selectedChannel )
+                } }>Check reminders</Item>
                 <Item onSelect={ create }>New reminder</Item>
-                <Item>Clear reminders</Item>
-                <Item>Update reminder</Item>
+                <Item onSelect={ remove }>Delete reminder</Item>
+                <Item onSelect={ update }>Update reminder</Item>
                 <CommandSeparator className="my-1" />
                 <Item shortcut="Pascal" onSelect={() => window.open("https://github.com/Insset-G2/reminder-manager")}>Open the reminder&apos;s GitHub</Item>
             </CommandGroup>
@@ -222,7 +245,7 @@ function CreateReminder({ setPages, setOpen }: { setPages: (pages: string[]) => 
         name: z.string()
             .min(1, "Name must be at least 1 character")
             .max(100, "Name must be less than 100 characters"),
-
+        mail : z.string().email().optional(),
         description: z.string().max(1000, "Description must be less than 1000 characters"),
 
         time: z.date({
@@ -249,10 +272,11 @@ function CreateReminder({ setPages, setOpen }: { setPages: (pages: string[]) => 
             contextValue.user.username,
             values.name,
             values.description,
-            values.time.toISOString()
-        )
-        setPages(["home"])
+            values.time.toISOString(),
+            values.mail
+        ) 
         setOpen(false)
+        setPages(["home"])
     }
 
     return (
@@ -274,6 +298,18 @@ function CreateReminder({ setPages, setOpen }: { setPages: (pages: string[]) => 
                             <FormItem>
                                 <FormControl>
                                     <Input autoFocus placeholder="Title" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="mail"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormControl>
+                                    <Input placeholder="Mail (optional)" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -340,7 +376,37 @@ function CreateReminder({ setPages, setOpen }: { setPages: (pages: string[]) => 
     )
 }
 
-function GetReminders({ setPages }: { setPages: (pages: string[]) => void }) {
+function DeleteReminder({ setPages, setOpen }: { setPages: (pages: string[]) => void, setOpen: ( open: boolean ) => void }) {
+
+    const {
+        deleteReminder,
+        contextValue,
+    } = useContextProvider();
+
+    const formSchema = z.object({
+        reminder: z.string().refine((reminder) => {
+            return reminder.length > 0
+        }, {
+            message: "Reminder must be at least 1 character",
+        }),
+    })
+
+    const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            reminder: "",
+        },
+    })
+
+    const onSubmit = (values: z.infer<typeof formSchema>) => {
+        deleteReminder(
+            contextValue.selectedServer,
+            contextValue.selectedChannel,
+            values.reminder
+        )
+        setOpen(false)
+        setPages(["home"])
+    }
 
     return (
         <div className="m-5">
@@ -352,12 +418,187 @@ function GetReminders({ setPages }: { setPages: (pages: string[]) => void }) {
                 <ArrowLeftIcon className="mr-2 h-4 w-4" />
                 Back
             </Button>
-            <div>
-
-            </div>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                        control={form.control}
+                        name="reminder"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormControl>
+                                    <Input autoFocus placeholder="Reminder ID" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <Button type="submit">Delete reminder</Button>
+                </form>
+            </Form>
         </div>
     )
 }
+
+function UpdateReminder({ setPages, setOpen }: { setPages: (pages: string[]) => void, setOpen: ( open: boolean ) => void }) {
+    
+    const {
+        updateReminder,
+        contextValue,
+    } = useContextProvider();
+
+    const [ date, setDate ] = useState<Date | null>( null )
+
+    const formSchema = z.object({
+        reminder: z.string().refine((reminder) => {
+            return reminder.length > 0
+        }, {
+            message: "Reminder must be at least 1 character",
+        }),
+        title: z.string().min(1, "Title must be at least 1 character").max(100, "Title must be less than 100 characters"),
+        description: z.string().max(1000, "Description must be less than 1000 characters"),
+        email: z.string().email().optional(),
+        time: z.date({
+            required_error: "Date is required",
+        }).refine((date) => {
+            return date > new Date()
+        }).transform((date) => {
+            return new Date(date)
+        }),
+    })
+
+    const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            reminder: "",
+            description: "",
+        },
+    })
+
+    const onSubmit = (values: z.infer<typeof formSchema>) => {
+        updateReminder(
+            contextValue.selectedServer,
+            contextValue.selectedChannel,
+            contextValue.user.username,
+            values.reminder,
+            values.title,
+            values.description,
+            values.time,
+            values.email
+        )
+        setOpen(false)
+        setPages(["home"])
+    }
+
+    return (
+        <div className="m-5">
+            <Button
+                className="-ml-4"
+                variant={"link"}
+                onClick={() => setPages(["home", "reminder"])}
+            >
+                <ArrowLeftIcon className="mr-2 h-4 w-4" />
+                Back
+            </Button>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                        control={form.control}
+                        name="reminder"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormControl>
+                                    <Input autoFocus placeholder="Reminder ID" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormControl>
+                                    <Input placeholder="Title" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormControl>
+                                    <Input placeholder="Mail (optional)" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormControl>
+                                    <Textarea
+                                        className="h-24"
+                                        placeholder="Description"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="time"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormControl>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant={"outline"}
+                                                className={cn(
+                                                    "w-full justify-start text-left font-normal",
+                                                    !date && "text-muted-foreground"
+                                                )}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {field.value ? (
+                                                    format(field.value, "PPP")
+                                                ) : (
+                                                    <span>Pick a date</span>
+                                                )}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar
+                                                mode="single"
+                                                selected={field.value}
+                                                onSelect={field.onChange}
+                                                initialFocus
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <Button type="submit">Update reminder</Button>
+                </form>
+            </Form>
+        </div>
+    )
+
+}
+
 
 function Crypto({ graphs, setPages, setOpen }: { graphs: () => void, setPages: (pages: string[]) => void, setOpen: ( open: boolean ) => void }) {
 
@@ -373,8 +614,8 @@ function Crypto({ graphs, setPages, setOpen }: { graphs: () => void, setPages: (
                     contextValue.selectedServer,
                     contextValue.selectedChannel
                 )
-                setPages(["home"])
                 setOpen(false)
+                setPages(["home"])
             } } >Check values</Item>
             <Item onSelect={ graphs }>Graphs</Item>
             <CommandSeparator className="my-1" />
@@ -413,8 +654,8 @@ function CryptoGraphs({ setPages, setOpen }: { setPages: (pages: string[]) => vo
             contextValue.selectedChannel,
             values.crypto
         )
-        setPages(["home"])
         setOpen(false)
+        setPages(["home"])
     }
 
     return (
@@ -472,7 +713,7 @@ function Youtube({ search }: { search: () => void }) {
     )
 }
 
-function SearchYoutube({ setPages }: { setPages: (pages: string[]) => void }) {
+function SearchYoutube({ setPages, setOpen }: { setPages: (pages: string[]) => void, setOpen: ( open: boolean ) => void }) {
 
         const {
             searchYoutube,
@@ -496,6 +737,7 @@ function SearchYoutube({ setPages }: { setPages: (pages: string[]) => void }) {
                 contextValue.selectedChannel,
                 values.search
             )
+            setOpen(false)
             setPages(["home"])
         }
 

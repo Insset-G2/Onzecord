@@ -30,7 +30,9 @@ export const Context = createContext({
         image: string;
     }, files: [ ] ) => { },
     getMessages: ( serverID: string, channelID: string ) => { },
-    createReminder: ( serverID: string, channelID: string, author: string, reminder: string, description: string, time: string ) => { },
+    createReminder: ( serverID: string, channelID: string, author: string, reminder: string, description: string, time: string, email: string ) => { },
+    deleteReminder: ( serverID: string, channelID: string, reminder: string ) => { },
+    updateReminder: ( serverID: string, channelID: string, author: string, reminder: string, title:string, description: string, time: string, email: string ) => { },
     getReminder: ( serverID: string, channelID: string ) => { },
     getCryptoGraphs: ( serverID: string, channelID: string, crypto: string ) => { },
     getCryptoValues: ( serverID: string, channelID: string ) => { },
@@ -67,7 +69,7 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
         selectedChannel: null,
     } );
     const socket = useWebsocket(
-        process.env.NODE_ENV === "development" ? "http://localhost:8080" : "https://onzecord-425916.ew.r.appspot.com"
+        process.env.NODE_ENV === "production" ? "https://onzecord-425916.ew.r.appspot.com" : "http://localhost:8080"
     );
 
     useEffect(() => {
@@ -156,8 +158,16 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
         socket?.emit( "getServers", { server } );
     }
 
-    function createReminder( serverID: string, channelID: string, author: string, reminder: string, description: string, time: string ) {
-        socket?.emit( "createReminder", { serverID, channelID, author, reminder, description, time } );
+    function createReminder( serverID: string, channelID: string, author: string, reminder: string, description: string, time: string, email: string ) {
+        socket?.emit( "createReminder", { serverID, channelID, author, reminder, description, time, email } );
+    }
+
+    function deleteReminder( serverID: string, channelID: string, reminder: string ) {
+        socket?.emit( "deleteReminder", { serverID, channelID, reminder } );
+    }
+
+    function updateReminder( serverID: string, channelID: string, author: string, reminder: string, title: string, description: string, time: string, email: string ) {
+        socket?.emit( "updateReminder", { serverID, channelID, author, reminder, title, description, time, email } );
     }
 
     function getCryptoGraphs( serverID: string, channelID: string, crypto: string ) {
@@ -169,7 +179,7 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
     }
 
     function getReminder( serverID: string, channelID: string ) {
-        socket?.emit( "getReminder", { serverID, channelID } );
+        socket?.emit( "getReminders", { serverID, channelID } );
     }
 
     function updateUser({ username, description }: { username: string, description: string }) {
@@ -205,6 +215,8 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
             joinChannel,
             socket,
             createReminder,
+            deleteReminder,
+            updateReminder,
             getReminder,
             getCryptoGraphs,
             getCryptoValues,

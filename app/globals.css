@@ -109,3 +109,100 @@
 textarea {
     field-sizing: content
 }
+
+.markdown {
+  max-width: 800px;
+}
+
+.markdown h1 {
+  @apply text-xl;
+}
+
+.markdown h2 {
+  @apply text-lg;
+}
+
+.markdown h3 {
+  @apply text-base;
+}
+
+.markdown h4 {
+  @apply text-sm;
+}
+
+.markdown h5 {
+  @apply text-xs;
+}
+
+.markdown h6 {
+  @apply text-xs;
+}
+
+.markdown a {
+  @apply text-blue-500;
+}
+
+.markdown a:hover {
+  @apply text-blue-400;
+}
+
+.markdown a:hover {
+  @apply no-underline;
+}
+
+.markdown ul {
+  @apply list-disc;
+}
+
+.markdown ol {
+  @apply list-decimal;
+}
+
+.markdown ul {
+  @apply flex flex-col gap-2;
+}
+
+.markdown ol {
+  @apply flex flex-col gap-2;
+}
+
+.markdown blockquote {
+  @apply border-l-4 border-neutral-500 pl-4 mx-1;
+}
+
+.markdown code {
+  @apply !bg-neutral-950/30 !text-neutral-400 !rounded-sm !px-1 !py-0.5 !text-sm !font-mono border border-neutral-800;
+}
+
+.markdown pre {
+  @apply !bg-neutral-950/20 !mt-2 !rounded-md !text-sm;
+}
+
+.markdown pre code {
+  @apply !bg-transparent !text-neutral-300 !p-[10px] !text-sm !font-mono;
+}
+
+.markdown table {
+  @apply !w-full !table-auto !border-collapse !border !border-neutral-800;
+}
+
+.markdown th {
+  @apply !border !border-neutral-800 !p-2 !text-neutral-300 !bg-neutral-950;
+}
+
+.markdown td {
+  @apply !border !border-neutral-800 !p-2 !text-neutral-300 !bg-neutral-950;
+}
+
+.markdown img {
+  @apply !w-full !rounded-md max-w-[400px];
+}
+
+.markdown hr {
+  @apply !border-neutral-800 !my-4;
+}
+
+.markdown p {
+  @apply !mt-2 !mb-2;
+}
+

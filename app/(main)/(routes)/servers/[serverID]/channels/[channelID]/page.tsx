@@ -192,23 +192,13 @@ function DisplayMessage(
                             </small>
                         </p>
 
-                        <p className="
-                            text-neutral-300/90 whitespace-pre-wrap
-                            [&>pre]:bg-neutral-950/20 [&>pre]:mt-2 [&>pre]:rounded-md [&>pre]:border [&>pre]:border-neutral-800 [&>pre]:overflow-x-auto [&>pre]:text-sm
-                            [&>h1]:text-xl [&>h2]:text-lg [&>h3]:text-base [&>h4]:text-sm [&>h5]:text-xs [&>h6]:text-xs
-                            [&>a]:text-blue-500 [&>a]:hover:text-blue-400 [&>a]:underline [&>a]:hover:no-underline
-                            [&>ul]:list-disc [&>ol]:list-decimal [&>li]:ml-4 [&>li]:mt-2 [&>li]:mb-2
-                            [&>ul]:flex [&>ul]:flex-col [&>ul]:gap-2 [&>ol]:flex [&>ol]:flex-col [&>ol]:gap-2
-                            [&>blockquote]:border-l-4 [&>blockquote]:border-neutral-500 [&>blockquote]:pl-4 [&>blockquote]:mx-1
-                        ">
-                            {messageState.translated && messageState.translated === "[Translating]" ? (
-                                <SkeletonText text={ message.message } />
-                            ) : (
-                                <Markdown rehypePlugins={[rehypeHighlight]}>{
-                                    messageState.translated ? messageState.translated : message.message
-                                }</Markdown>
-                            )}
-                        </p>
+                        {messageState.translated && messageState.translated === "[Translating]" ? (
+                            <SkeletonText text={ message.message } />
+                        ) : (
+                            <Markdown className={ "markdown" } rehypePlugins={[rehypeHighlight]}>{
+                                messageState.translated ? messageState.translated : message.message
+                            }</Markdown>
+                        )}
                         <div className="flex gap-1">
                             <div>
                                 {message.files[0] && (
@@ -222,7 +212,7 @@ function DisplayMessage(
                                                 style={{
                                                     width: "300px",
                                                     height: "300px",
-                                                    background: `url(/upload/${message.files[0]})`,
+                                                    background: `url(/api/public/${message.files[0]})`,
                                                     backgroundSize: "cover",
                                                     backgroundPosition: "center"
                                                 }}
@@ -230,7 +220,7 @@ function DisplayMessage(
                                         </DialogTrigger>
                                         <DialogContent>
                                             <img
-                                                src={`/upload/${message.files[0]}`}
+                                                src={`/api/public/${message.files[0]}`}
                                                 alt={message.files[0]}
                                                 className="rounded-md"
                                             />
@@ -250,7 +240,7 @@ function DisplayMessage(
                                                 style={{
                                                     width: `calc( ${message.files.length > 2 ? "296px" : "300px"} / ${message.files.length > 2 ? 2 : 1})`,
                                                     height: `calc( ${message.files.length > 2 ? "296px" : "300px"} / ${message.files.length > 2 ? 2 : 1})`,
-                                                    background: `url(/upload/${message.files[1]})`,
+                                                    background: `url(/api/public/${message.files[1]})`,
                                                     backgroundSize: "cover",
                                                     backgroundPosition: "center"
                                                 }}
@@ -258,7 +248,7 @@ function DisplayMessage(
                                         </DialogTrigger>
                                         <DialogContent>
                                             <img
-                                                src={`/upload/${message.files[1]}`}
+                                                src={`/api/public/${message.files[1]}`}
                                                 alt={message.files[1]}
                                                 className="rounded-md w-full"
                                             />
@@ -276,7 +266,7 @@ function DisplayMessage(
                                                 style={{
                                                     width: `calc( 296px / 2)`,
                                                     height: `calc( 296px / 2)`,
-                                                    background: `url(/upload/${message.files[2]})`,
+                                                    background: `url(/api/public/${message.files[2]})`,
                                                     backgroundSize: "cover",
                                                     backgroundPosition: "center"
                                                 }}
@@ -284,7 +274,7 @@ function DisplayMessage(
                                         </DialogTrigger>
                                         <DialogContent className="w-fit m-0">
                                             <img
-                                                src={`/upload/${message.files[2]}`}
+                                                src={`/api/public/${message.files[2]}`}
                                                 alt={message.files[2]}
                                                 className="rounded-md"
                                             />
