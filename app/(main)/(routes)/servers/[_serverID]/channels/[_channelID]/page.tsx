@@ -316,8 +316,6 @@ function DisplayMessage(
                 </ContextMenuSub>
             </ContextMenuContent>
         </ContextMenu>
-
-
     )
 
 }
