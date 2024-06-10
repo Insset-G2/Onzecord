@@ -57,6 +57,9 @@ const FileUploadDropzone = ({
     multiple: true,
     maxFiles: 3,
     maxSize: 4 * 1024 * 1024,
+    accept: {
+        "image/*": [".jpg", ".jpeg", ".png", ".gif"],
+    },
   } satisfies DropzoneOptions;
 
   const [ showPlaceholder, setShowPlaceholder ] = useState( true );
@@ -69,6 +72,8 @@ const FileUploadDropzone = ({
                 e.preventDefault();
                 form.handleSubmit(onSubmit)();
                 form.reset();
+                form.setValue("files", null);
+                form.clearErrors();
             }
         }}
         className="relative w-full grid gap-2"

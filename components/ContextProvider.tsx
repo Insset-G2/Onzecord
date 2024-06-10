@@ -34,7 +34,8 @@ export const Context = createContext({
     getReminder: ( serverID: string, channelID: string ) => { },
     getCryptoGraphs: ( serverID: string, channelID: string, crypto: string ) => { },
     getCryptoValues: ( serverID: string, channelID: string ) => { },
-    updateUser: ({ username, description }: { username: string, description: string }) => { }
+    updateUser: ({ username, description }: { username: string, description: string }) => { },
+    searchYoutube: ( serverID: string, channelID: string, query: string ) => { },
 });
 
 
@@ -66,7 +67,8 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
         selectedChannel: null,
     } );
     const socket = useWebsocket(
-        "https://onzecord-425916.ew.r.appspot.com"
+        // "https://onzecord-425916.ew.r.appspot.com"
+        "http://localhost:8080"
      );
 
     useEffect(() => {
@@ -184,6 +186,10 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
         })
     }
 
+    function searchYoutube( serverID: string, channelID: string, query: string ) {
+        socket?.emit( "searchYoutube", { serverID, channelID, query } );
+    }
+
     return (
         <Context.Provider value={{
             contextValue,
@@ -203,7 +209,8 @@ export const ContextProvider = ({ children }: { children: React.ReactNode }) => 
             getReminder,
             getCryptoGraphs,
             getCryptoValues,
-            updateUser
+            updateUser,
+            searchYoutube,
         }}>
             { children }
         </Context.Provider>
