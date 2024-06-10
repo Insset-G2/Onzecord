@@ -2,7 +2,6 @@ const { createServer } = require("node:http");
 const next = require("next");
 const { Server } = require("socket.io");
 const fs = require("fs");
-const { log } = require("node:console");
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
 const port = 8080;
