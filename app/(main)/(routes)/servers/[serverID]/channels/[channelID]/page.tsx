@@ -212,7 +212,7 @@ function DisplayMessage(
                                                 style={{
                                                     width: "300px",
                                                     height: "300px",
-                                                    background: `url(/api/public/${message.files[0]})`,
+                                                    background: `url(https://storage.googleapis.com/onzecord-425916.appspot.com/${message.files[0]})`,
                                                     backgroundSize: "cover",
                                                     backgroundPosition: "center"
                                                 }}
@@ -220,7 +220,7 @@ function DisplayMessage(
                                         </DialogTrigger>
                                         <DialogContent>
                                             <img
-                                                src={`/api/public/${message.files[0]}`}
+                                                src={`https://storage.googleapis.com/onzecord-425916.appspot.com/${message.files[0]}`}
                                                 alt={message.files[0]}
                                                 className="rounded-md"
                                             />
@@ -240,7 +240,7 @@ function DisplayMessage(
                                                 style={{
                                                     width: `calc( ${message.files.length > 2 ? "296px" : "300px"} / ${message.files.length > 2 ? 2 : 1})`,
                                                     height: `calc( ${message.files.length > 2 ? "296px" : "300px"} / ${message.files.length > 2 ? 2 : 1})`,
-                                                    background: `url(/api/public/${message.files[1]})`,
+                                                    background: `url(https://storage.googleapis.com/onzecord-425916.appspot.com/${message.files[1]})`,
                                                     backgroundSize: "cover",
                                                     backgroundPosition: "center"
                                                 }}
@@ -248,7 +248,7 @@ function DisplayMessage(
                                         </DialogTrigger>
                                         <DialogContent>
                                             <img
-                                                src={`/api/public/${message.files[1]}`}
+                                                src={`https://storage.googleapis.com/onzecord-425916.appspot.com/${message.files[1]}`}
                                                 alt={message.files[1]}
                                                 className="rounded-md w-full"
                                             />
@@ -266,7 +266,7 @@ function DisplayMessage(
                                                 style={{
                                                     width: `calc( 296px / 2)`,
                                                     height: `calc( 296px / 2)`,
-                                                    background: `url(/api/public/${message.files[2]})`,
+                                                    background: `urlhttps://storage.googleapis.com/onzecord-425916.appspot.com/${message.files[2]})`,
                                                     backgroundSize: "cover",
                                                     backgroundPosition: "center"
                                                 }}
@@ -274,7 +274,7 @@ function DisplayMessage(
                                         </DialogTrigger>
                                         <DialogContent className="w-fit m-0">
                                             <img
-                                                src={`/api/public/${message.files[2]}`}
+                                                src={`https://storage.googleapis.com/onzecord-425916.appspot.com/${message.files[2]}`}
                                                 alt={message.files[2]}
                                                 className="rounded-md"
                                             />
