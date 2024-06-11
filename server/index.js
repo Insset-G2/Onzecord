@@ -1,7 +1,8 @@
 const { createServer } = require("node:http");
 const next = require("next");
 const { Server } = require("socket.io");
-const fs = require("fs");
+const { Storage } = require("@google-cloud/storage");
+const path = require("path");
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
 const port = 8080;
@@ -21,6 +22,8 @@ const messages = {}
     , users    = {}
 
 app.prepare().then(() => {
+
+    console.log( process.env.NODE_ENV )
 
   const httpServer = createServer(handler);
 
@@ -366,14 +369,38 @@ app.prepare().then(() => {
 
       await fetch(`${process.env.NEXT_PUBLIC_CRYPTO_URL}/graph/${crypto}`)
         .then(resp => resp.text())
-        .then(text => {
+        .then(async text => {
+
           const src    = text.match(/src="(.+?)"/)[1],
                 base64 = src.split(",")[1];
 
-          if (!fs.existsSync("./public/upload"))
-            fs.mkdirSync("./public/upload");
+            const storage = new Storage({
+                keyFilename: path.join( process.cwd(), "/onzecord-425916-54811c9a72a4.json" ),
+            });
 
-          fs.writeFileSync(`./public/upload/${crypto}.png`, base64, "base64");
+        const bucket = storage.bucket( `${ process.env.GCP_BUCKET_NAME }` );
+
+        const buffer = Buffer.from( base64, "base64" );
+
+        await new Promise( ( resolve, reject ) => {
+
+            const file = bucket.file( `${ crypto }.png` );
+            const writeStream = file.createWriteStream();
+
+            writeStream.on( "error", ( error ) => {
+                console.error( error );
+                reject( error );
+            });
+
+            writeStream.on( "finish", () => {
+                resolve( true );
+            });
+
+            writeStream.write( buffer );
+            writeStream.end();
+
+        });
+
 
           addMessage({
             serverID,

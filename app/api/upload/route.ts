@@ -1,43 +1,53 @@
 import { NextRequest, NextResponse } from "next/server";
-import {  NextApiRequest, NextApiResponse } from "next";
 import path from "path";
-import { writeFile } from "fs/promises";
-import { existsSync, mkdirSync, createReadStream } from "fs";
-export async function POST( req: NextRequest, res: NextApiResponse ) {
+import { Storage } from "@google-cloud/storage";
+
+export async function POST( req: NextRequest ) {
 
     const formData = await req.formData();
 
     const file = formData.get("file")
         , name = formData.get("name");
 
-    if ( !file )
+    if ( !file || !name )
         return NextResponse.json({ error: "No files received." }, { status: 400 });
 
     // @ts-ignore
-    const buffer    = Buffer.from( await file.arrayBuffer() )
-        , filename  = name
+    const buffer = Buffer.from( await file.arrayBuffer() );
 
-  try {
+    try {
 
-    const folder = path.join(process.cwd(), "public/upload");
+        const storage = new Storage({
+            keyFilename: path.join( process.cwd(), "/onzecord-425916-54811c9a72a4.json" ),
+        });
 
-    if (!existsSync( folder ))
-        mkdirSync( folder, { recursive: true });
+        const bucket = storage.bucket( `${ process.env.GCP_BUCKET_NAME }` );
 
-    await writeFile(
-        path.join(process.cwd(), "public/upload/" + filename),
-        buffer
-    );
+        await new Promise( ( resolve, reject ) => {
 
-    return NextResponse.json({ id: filename, status: 200 });
+            const file = bucket.file( name as string );
+            const writeStream = file.createWriteStream();
+
+            writeStream.on( "error", ( error ) => {
+                console.error( error );
+                reject( error );
+            });
+
+            writeStream.on( "finish", () => {
+                resolve( true );
+            });
+
+            writeStream.write( buffer );
+            writeStream.end();
+
+        });
+
+        return NextResponse.json({ id: name, status: 200 });
 
     } catch ( error ) {
+
         return NextResponse.json({ Message: "Failed", status: 500 });
+
     }
 
 };
-
-export async function GET( req: NextRequest, res: NextApiResponse ) {
-  return NextResponse.json({ Message: "GET request not supported", status: 405 });
-}
-
